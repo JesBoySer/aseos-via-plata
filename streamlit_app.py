@@ -23,15 +23,17 @@ st.markdown("""
 .stButton>button {color:#F8FAFC;font-weight:700; background: #1E293B; border: 2px solid #38BDF8; border-radius:12px; padding:0.5rem 1rem; transition:0.2s;}
 .stButton>button:hover {background:#2563EB; color:white; border-color:#7DD3FC; transform:scale(1.02);}
 input[type="checkbox"]:checked{accent-color:#22C55E;}
-textarea{border-radius:8px;background:#1E293B;color:white;width:100%;height:80px;padding:5px;}
+textarea{border-radius:8px;background:#1E293B;color:white;width:100%;height:120px;padding:5px;}
 </style>
 """, unsafe_allow_html=True)
 
-# --- Base de datos ---
+# --- Base de datos y CSV ---
 def init_db():
     if not os.path.exists('data'):
         os.makedirs('data')
-    conn = sqlite3.connect('data/historico.sqlite')
+    db_path = 'data/historico.sqlite'
+    csv_path = 'data/historico.csv'
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS visitas 
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,9 +47,28 @@ def init_db():
                  estado_bano TEXT,
                  observaciones TEXT)''')
     conn.commit()
+    
+    # Si SQLite está vacío y CSV existe, importar CSV
+    df_db = pd.read_sql_query("SELECT * FROM visitas", conn)
+    if df_db.empty and os.path.exists(csv_path):
+        df_csv = pd.read_csv(csv_path)
+        for _, row in df_csv.iterrows():
+            c.execute("""INSERT INTO visitas
+                         (planta,bano,alumno,curso,profesor,h_entrada,h_salida,estado_bano,observaciones)
+                         VALUES (?,?,?,?,?,?,?,?,?)""",
+                         (row['planta'],row['bano'],row['alumno'],row['curso'],row['profesor'],
+                          row['h_entrada'],row['h_salida'],row['estado_bano'],row['observaciones']))
+        conn.commit()
     return conn
 
-# --- Carga CSV ---
+# --- Guardar en CSV ---
+def save_csv():
+    conn = init_db()
+    df = pd.read_sql_query("SELECT * FROM visitas ORDER BY id ASC", conn)
+    conn.close()
+    df.to_csv('data/historico.csv', index=False)
+
+# --- Carga CSV de alumnos y profesores ---
 @st.cache_data
 def cargar_maestros():
     def leer_csv_robusto(ruta):
@@ -65,11 +86,16 @@ df_alumnos, lista_profesores = cargar_maestros()
 
 # --- Estado inicial ---
 if 'planta' not in st.session_state: st.session_state.planta=None
-if 'ocupacion' not in st.session_state: st.session_state.ocupacion = {}
+if 'ocupacion' not in st.session_state: st.session_state.ocupacion = {}  # ahora por planta
 if 'editar' not in st.session_state: st.session_state.editar = {}
 zonas_fisicas={"NORTE":["Chicos Norte","Chicas Norte"],"SUR":["Chicos Sur","Chicas Sur"]}
-for b in [b for z in zonas_fisicas.values() for b in z]:
-    if b not in st.session_state.ocupacion: st.session_state.ocupacion[b]=[]
+
+# inicializar ocupación por planta
+for planta in ["Primera","Segunda"]:
+    if planta not in st.session_state.ocupacion:
+        st.session_state.ocupacion[planta]={}
+        for b in [b for z in zonas_fisicas.values() for b in z]:
+            st.session_state.ocupacion[planta][b]=[]
 
 # --- Sidebar ---
 with st.sidebar:
@@ -105,7 +131,7 @@ else:
                 with cont:
                     icono = "🚹" if "Chicos" in bano else "🚺"
                     st.markdown(f"### {icono} {bano}")
-                    ocupados = st.session_state.ocupacion[bano]
+                    ocupados = st.session_state.ocupacion[st.session_state.planta][bano]
                     num = len(ocupados)
 
                     # Tabla encabezado
@@ -116,14 +142,13 @@ else:
                     # Dos filas por baño
                     for i in range(2):
                         fila = st.columns([1.2,3,2,2,1,1])
-                        key_fila=f"{bano}_{i}"
+                        key_fila=f"{bano}_{i}_{st.session_state.planta}"
                         if i<num:
                             p=ocupados[i]
                             h_ent=datetime.strptime(p['h_entrada'],"%H:%M")
                             ahora=datetime.now()
                             h_real=ahora.replace(hour=h_ent.hour,minute=h_ent.minute)
                             minutos=int((ahora-h_real).total_seconds()/60)
-                            # botón rojo si alumno está dentro
                             estado_emoji = "🔴"
                             if fila[0].button(estado_emoji,key=f"info_{key_fila}"):
                                 st.info(f"Alumno: {p['alumno']}\nCurso: {p['curso']}\nProfesor: {p['profesor']}\nEntrada: {p['h_entrada']}")
@@ -133,7 +158,7 @@ else:
                             ok_val=fila[4].checkbox("",True,key=f"ok_{key_fila}")
                             obs=""
                             if not ok_val:
-                                obs=fila[4].text_area("Observaciones",key=f"obs_{key_fila}",height=80)
+                                obs=fila[4].text_area("Observaciones",key=f"obs_{key_fila}",height=120)
                             if fila[5].button("Salida",key=f"fin_{key_fila}"):
                                 conn=init_db()
                                 conn.execute(
@@ -145,22 +170,24 @@ else:
                                      "OK" if ok_val else "Problema", obs)
                                 )
                                 conn.commit(); conn.close()
-                                st.session_state.ocupacion[bano].remove(p)
+                                save_csv()
+                                st.session_state.ocupacion[st.session_state.planta][bano].remove(p)
                                 st.rerun()
                         else:
+                            # botón verde toggle
                             if key_fila not in st.session_state.editar: st.session_state.editar[key_fila]=False
-                            if fila[0].button("🟢",key=f"libre_{key_fila}"): st.session_state.editar[key_fila]=True
+                            if fila[0].button("🟢",key=f"libre_{key_fila}"):
+                                st.session_state.editar[key_fila] = not st.session_state.editar[key_fila]
                             fila[1].markdown("-"); fila[2].markdown("-"); fila[3].markdown("-")
-                            fila[4].checkbox("",True,key=f"ok_{key_fila}_vacio",disabled=True); fila[5].markdown("-")
+                            fila[4].markdown("-"); fila[5].markdown("-")
+                            # Campos de nueva visita
                             if st.session_state.editar[key_fila]:
                                 curso_sel = st.selectbox("Curso",[""]+sorted(df_alumnos['Curso'].unique()),key=f"curso_{key_fila}",format_func=lambda x:"Curso" if x=="" else x)
                                 alumno_sel=st.selectbox("Alumno",[""]+sorted(df_alumnos[df_alumnos['Curso']==curso_sel]['Nombre']) if curso_sel else [""],key=f"alumno_{key_fila}",format_func=lambda x:"Alumno" if x=="" else x)
                                 prof_sel=st.selectbox("Profesor",[""]+lista_profesores,key=f"prof_{key_fila}",format_func=lambda x:"Profesor" if x=="" else x)
-                                ok_val_new=st.checkbox("OK",value=True,key=f"ok_new_{key_fila}")
-                                obs_new = st.text_area("Observaciones", key=f"obs_new_{key_fila}", height=80)
                                 if st.button("Registrar Entrada",key=f"entrada_new_{key_fila}"):
                                     if alumno_sel and curso_sel and prof_sel:
-                                        st.session_state.ocupacion[bano].append({
+                                        st.session_state.ocupacion[st.session_state.planta][bano].append({
                                             "alumno":alumno_sel,
                                             "curso":curso_sel,
                                             "profesor":prof_sel,
