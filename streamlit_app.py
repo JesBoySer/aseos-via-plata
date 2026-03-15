@@ -178,25 +178,19 @@ else:
                     for i in range(2):
                         fila = st.columns([1.2,3,2,1,1,1])
                         if i < num:
+                            # Ocupado
                             p = ocupados[i]
                             h_ent = datetime.strptime(p['h_entrada'],"%H:%M")
                             ahora = datetime.now()
                             h_real = ahora.replace(hour=h_ent.hour,minute=h_ent.minute)
                             minutos = int((ahora - h_real).total_seconds()/60)
-
-                            # Estado
-                            if minutos >= 10:
-                                estado_emoji = "🔴"
-                            else:
-                                estado_emoji = "🟢"
+                            estado_emoji = "🔴" if minutos>=10 else "🟢"
                             if fila[0].button(estado_emoji,key=f"info_{bano}_{i}"):
                                 st.info(f"Alumno: {p['alumno']}\nCurso: {p['curso']}\nProfesor: {p['profesor']}\nEntrada: {p['h_entrada']}")
-
                             fila[1].markdown(f"**{p['alumno']}**")
                             fila[2].markdown(p['curso'])
                             fila[3].markdown(f"{minutos} min")
-
-                            ok_val = fila[4].checkbox("",True,key=f"ok_{bano}_{i}")
+                            ok_val = fila[4].checkbox("",False,key=f"ok_{bano}_{i}")
                             obs = ""
                             if not ok_val:
                                 obs = fila[4].text_area("Observaciones",key=f"obs_{bano}_{i}",height=40)
@@ -215,20 +209,28 @@ else:
                                 st.session_state.ocupacion[bano].remove(p)
                                 st.rerun()
                         else:
-                            # Vacío -> botón entrada
-                            cursos = sorted(df_alumnos['Curso'].unique())
-                            curso = st.selectbox("Curso",cursos,key=f"curso_{bano}_{i}")
-                            alumnos = df_alumnos[df_alumnos['Curso']==curso]['Nombre']
-                            alumno = st.selectbox("Alumno",sorted(alumnos),key=f"alumno_{bano}_{i}")
-                            prof = st.selectbox("Autoriza",lista_profesores,key=f"prof_{bano}_{i}")
-                            if st.button("Registrar Entrada",key=f"entrada_{bano}_{i}"):
-                                st.session_state.ocupacion[bano].append({
-                                    "alumno":alumno,
-                                    "curso":curso,
-                                    "profesor":prof,
-                                    "h_entrada":datetime.now().strftime("%H:%M")
-                                })
-                                st.rerun()
+                            # Libre -> mostrar guiones y bola verde como botón
+                            if fila[0].button("🟢",key=f"libre_{bano}_{i}"):
+                                # Desplegar selección
+                                curso_sel = st.selectbox("Curso",[""] + sorted(df_alumnos['Curso'].unique()),key=f"curso_{bano}_{i}")
+                                if curso_sel != "":
+                                    alumnos = df_alumnos[df_alumnos['Curso']==curso_sel]['Nombre']
+                                    alumno_sel = st.selectbox("Alumno",[""] + sorted(alumnos),key=f"alumno_{bano}_{i}")
+                                    prof_sel = st.selectbox("Autoriza",[""] + lista_profesores,key=f"prof_{bano}_{i}")
+                                    if st.button("Registrar Entrada",key=f"entrada_{bano}_{i}"):
+                                        if alumno_sel != "" and curso_sel != "":
+                                            st.session_state.ocupacion[bano].append({
+                                                "alumno":alumno_sel,
+                                                "curso":curso_sel,
+                                                "profesor":prof_sel,
+                                                "h_entrada":datetime.now().strftime("%H:%M")
+                                            })
+                                            st.rerun()
+                            fila[1].markdown("-")
+                            fila[2].markdown("-")
+                            fila[3].markdown("-")
+                            fila[4].checkbox("",False,key=f"ok_{bano}_{i}_vacio",disabled=True)
+                            fila[5].markdown("-")
 
     # HISTÓRICO
     with tab_stats:
