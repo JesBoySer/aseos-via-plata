@@ -95,36 +95,42 @@ def init_db():
 # GUARDAR EN GITHUB
 # -------------------------
 
-def save_to_github(df):
+def save_to_github(df_sqlite):
 
-    csv_path="data/historico.csv"
-    df.to_csv(csv_path,index=False)
+    token = st.secrets["GITHUB_TOKEN"]
+    repo_name = st.secrets["GITHUB_REPO"]
 
-    token=st.secrets["GITHUB_TOKEN"]
-    repo_name=st.secrets["GITHUB_REPO"]
+    g = Github(token)
+    repo = g.get_repo(repo_name)
 
-    g=Github(token)
-    repo=g.get_repo(repo_name)
-
-    contenido=open(csv_path,"rb").read()
+    ruta = "data/historico.csv"
 
     try:
+        archivo = repo.get_contents(ruta)
 
-        file=repo.get_contents("data/historico.csv")
+        contenido = archivo.decoded_content.decode("utf-8")
+
+        df_github = pd.read_csv(pd.io.common.StringIO(contenido))
+
+        df_total = pd.concat([df_github, df_sqlite]).drop_duplicates()
+
+        csv = df_total.to_csv(index=False)
 
         repo.update_file(
-            "data/historico.csv",
+            ruta,
             f"Actualizar histórico {datetime.now()}",
-            contenido,
-            file.sha
+            csv,
+            archivo.sha
         )
 
     except:
 
+        csv = df_sqlite.to_csv(index=False)
+
         repo.create_file(
-            "data/historico.csv",
+            ruta,
             f"Crear histórico {datetime.now()}",
-            contenido
+            csv
         )
 
 
@@ -237,16 +243,17 @@ with tab_panel:
 
             with cont:
 
-                st.markdown(f"### {bano}")
+                icono = "🚹" if "Chicos" in bano else "🚺" 
+                st.markdown(f"### {icono} {bano}")
 
                 cab=st.columns([1,3,2,2,1,1])
 
-                cab[0].markdown('<div class="header-box">Estado</div>',unsafe_allow_html=True)
-                cab[1].markdown('<div class="header-box">Alumno</div>',unsafe_allow_html=True)
-                cab[2].markdown('<div class="header-box">Curso</div>',unsafe_allow_html=True)
-                cab[3].markdown('<div class="header-box">Minutos</div>',unsafe_allow_html=True)
-                cab[4].markdown('<div class="header-box">OK</div>',unsafe_allow_html=True)
-                cab[5].markdown('<div class="header-box">Salida</div>',unsafe_allow_html=True)
+                cab[0].markdown("**Estado**")
+                cab[1].markdown("**Alumno**")
+                cab[2].markdown("**Curso**")
+                cab[3].markdown("**Minutos**")
+                cab[4].markdown("**OK**")
+                cab[5].markdown("**Salida**")
 
                 ocupados=st.session_state.ocupacion[st.session_state.planta][bano]
 
