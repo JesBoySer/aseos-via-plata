@@ -1,2 +1,2 @@
-id,planta,bano,alumno,curso,profesor,h_entrada,h_salida,estado_bano,observaciones
-1,Primera,Chicos Norte,BENITEZ LEZCANO MATHIAS GABRIEL,IF2,DE ILDEFONSO GARCIA  DIEGO,19:18,19:19,OK,
+id,planta,bano,alumno,curso,profesor,h_entrada,h_salida,estado,observaciones
+1,Primera,Chicos Norte,ALONSO GARCIA DANIEL,B12,ALLENDE FERNANDEZ  NESTOR MANUEL,19:35,19:35,OK,
