@@ -23,23 +23,35 @@ def init_db():
 # --- CARGA DE DATOS REALES ---
 @st.cache_data
 def cargar_maestros():
-    # Carga de Alumnos
-    if os.path.exists('data/alumnos.csv'):
-        df_alumnos = pd.read_csv('data/alumnos.csv', encoding='utf-8')
-    else:
-        st.error("⚠️ No se encuentra 'data/alumnos.csv'. Usando datos de prueba.")
-        df_alumnos = pd.DataFrame({'Nombre': ['Ejemplo Alumno'], 'Curso': ['PRUEBA']})
+    def leer_csv_perfecto(ruta):
+        if not os.path.exists(ruta):
+            return None
+        try:
+            # utf-8-sig ignora automáticamente el BOM de Excel
+            df = pd.read_csv(ruta, sep=',', encoding='utf-8-sig', engine='python')
+        except UnicodeDecodeError:
+            df = pd.read_csv(ruta, sep=',', encoding='latin-1', engine='python')
+        
+        # Limpieza radical de nombres de columnas
+        df.columns = [str(c).strip().replace('\ufeff', '') for c in df.columns]
+        return df
+
+    # --- CARGA DE ALUMNOS ---
+    df_alumnos = leer_csv_perfecto('data/alumnos.csv')
+    if df_alumnos is None or 'Curso' not in df_alumnos.columns:
+        # Fallback por si acaso fallan las columnas
+        st.error(f"Error en columnas de alumnos.csv. Detectadas: {list(df_alumnos.columns if df_alumnos is not None else [])}")
+        df_alumnos = pd.DataFrame({'Nombre': ['Error en CSV'], 'Curso': ['REVISAR']})
     
-    # Carga de Profesores
-    if os.path.exists('data/profesores.csv'):
-        df_profesores = pd.read_csv('data/profesores.csv', encoding='utf-8')['Nombre'].tolist()
+    # --- CARGA DE PROFESORES ---
+    df_prof = leer_csv_perfecto('data/profesores.csv')
+    if df_prof is not None and 'Nombre' in df_prof.columns:
+        df_profesores = df_prof['Nombre'].dropna().tolist()
     else:
-        st.error("⚠️ No se encuentra 'data/profesores.csv'. Usando datos de prueba.")
+        st.error("No se detecta columna 'Nombre' en profesores.csv")
         df_profesores = ['Profesor de Prueba']
     
     return df_alumnos, df_profesores
-
-df_alumnos, lista_profesores = cargar_maestros()
 
 # --- LÓGICA DE ESTADO ---
 if 'planta' not in st.session_state:
