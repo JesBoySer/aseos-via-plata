@@ -39,8 +39,7 @@ def cargar_maestros():
     # --- CARGA DE ALUMNOS ---
     df_alumnos = leer_csv_perfecto('data/alumnos.csv')
     if df_alumnos is None or 'Curso' not in df_alumnos.columns:
-        # Fallback por si acaso fallan las columnas
-        st.error(f"Error en columnas de alumnos.csv. Detectadas: {list(df_alumnos.columns if df_alumnos is not None else [])}")
+        st.error(f"Error en alumnos.csv. Detectadas: {list(df_alumnos.columns if df_alumnos is not None else [])}")
         df_alumnos = pd.DataFrame({'Nombre': ['Error en CSV'], 'Curso': ['REVISAR']})
     
     # --- CARGA DE PROFESORES ---
@@ -52,6 +51,11 @@ def cargar_maestros():
         df_profesores = ['Profesor de Prueba']
     
     return df_alumnos, df_profesores
+
+# =========================================================================
+# ESTA ES LA LÍNEA QUE FALTABA (Llamar a la función para definir las variables)
+# =========================================================================
+df_alumnos, lista_profesores = cargar_maestros()
 
 # --- LÓGICA DE ESTADO ---
 if 'planta' not in st.session_state:
@@ -73,7 +77,6 @@ if st.session_state.planta is None:
         st.session_state.planta = "Segunda"
         st.rerun()
 else:
-    # Barra lateral de navegación
     st.sidebar.title(f"📍 Planta {st.session_state.planta}")
     if st.sidebar.button("🔄 Cambiar Planta"):
         st.session_state.planta = None
@@ -81,7 +84,6 @@ else:
 
     tab_ctrl, tab_hist = st.tabs(["🎮 Panel de Control", "📊 Estadísticas"])
 
-    # --- PANEL DE CONTROL ---
     with tab_ctrl:
         cols = st.columns(4)
         for idx, nombre_bano in enumerate(tipos_bano):
@@ -93,7 +95,6 @@ else:
                 color = "green" if n < 2 else "red"
                 st.markdown(f"Ocupación: :{color}[{n} / 2]")
 
-                # Mostrar ocupantes
                 for p_idx, p in enumerate(ocupados):
                     with st.expander(f"👤 {p['alumno']}", expanded=True):
                         st.write(f"Curso: {p['curso']}")
@@ -109,13 +110,12 @@ else:
                             st.session_state.ocupacion[nombre_bano].remove(p)
                             st.rerun()
 
-                # Añadir nuevo si hay aforo
                 if n < 2:
                     st.write("---")
                     with st.popover(f"➕ Registrar", use_container_width=True):
                         curso = st.selectbox("Curso", sorted(df_alumnos['Curso'].unique()), key=f"c_{nombre_bano}")
-                        alumnos = df_alumnos[df_alumnos['Curso'] == curso]['Nombre']
-                        alumno = st.selectbox("Alumno/a", sorted(alumnos), key=f"a_{nombre_bano}")
+                        alumnos_filtro = df_alumnos[df_alumnos['Curso'] == curso]['Nombre']
+                        alumno = st.selectbox("Alumno/a", sorted(alumnos_filtro), key=f"a_{nombre_bano}")
                         profe = st.selectbox("Autoriza", sorted(lista_profesores), key=f"p_{nombre_bano}")
                         if st.button("Confirmar", key=f"conf_{nombre_bano}", type="primary"):
                             st.session_state.ocupacion[nombre_bano].append({
@@ -124,7 +124,6 @@ else:
                             })
                             st.rerun()
 
-    # --- ESTADÍSTICAS ---
     with tab_hist:
         conn = init_db()
         df = pd.read_sql_query("SELECT * FROM visitas", conn)
