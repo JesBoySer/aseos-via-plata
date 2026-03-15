@@ -205,7 +205,6 @@ else:
             for idx_b, bano in enumerate(lista_banos):
                 with col_izq if idx_b == 0 else col_der:
                     # Tarjeta del baño
-                    st.markdown('<div class="bano-block">', unsafe_allow_html=True)
                     
                     icono = "🚹" if "Chicos" in bano else "🚺"
                     st.markdown(f"#### {icono} {bano}")
