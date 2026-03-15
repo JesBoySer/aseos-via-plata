@@ -3,6 +3,13 @@ import pandas as pd
 import sqlite3
 import os
 from datetime import datetime
+from streamlit_autorefresh import st_autorefresh
+
+# ---------------------------------------------------
+# REFRESCO AUTOMÁTICO (cada 30 segundos)
+# ---------------------------------------------------
+
+st_autorefresh(interval=30000, key="refresh")
 
 # ---------------------------------------------------
 # CONFIGURACIÓN
@@ -44,15 +51,6 @@ st.markdown("""
     border-radius:18px;
     border:1px solid #334155;
     margin-bottom:16px;
-    transition:0.2s;
-}
-
-.bano-card:hover{
-    border-color:#38BDF8;
-}
-
-.estado-bolas{
-    font-size:22px;
 }
 
 input[type="checkbox"]:checked{
@@ -137,18 +135,13 @@ if 'planta' not in st.session_state:
     st.session_state.planta=None
 
 zonas_fisicas={
-
 "NORTE":["Chicos Norte","Chicas Norte"],
 "SUR":["Chicos Sur","Chicas Sur"]
-
 }
 
 if 'ocupacion' not in st.session_state:
-
     st.session_state.ocupacion={
-
         b:[] for zona in zonas_fisicas.values() for b in zona
-
     }
 
 # ---------------------------------------------------
@@ -162,11 +155,8 @@ with st.sidebar:
     st.markdown("---")
 
     if st.session_state.planta is None:
-
         st.info("Selecciona planta")
-
     else:
-
         st.success(f"Planta {st.session_state.planta}")
 
         if st.button("Cambiar planta"):
@@ -184,12 +174,10 @@ if st.session_state.planta is None:
     c1,c2=st.columns(2)
 
     if c1.button("🏢 Planta Primera",use_container_width=True):
-
         st.session_state.planta="Primera"
         st.rerun()
 
     if c2.button("🏢 Planta Segunda",use_container_width=True):
-
         st.session_state.planta="Segunda"
         st.rerun()
 
@@ -200,10 +188,6 @@ if st.session_state.planta is None:
 else:
 
     tab_mapa, tab_stats = st.tabs(["Panel", "Histórico"])
-
-    # ---------------------------------------------------
-    # PANEL CONTROL
-    # ---------------------------------------------------
 
     with tab_mapa:
 
@@ -222,9 +206,9 @@ else:
                     icono="🚹" if "Chicos" in bano else "🚺"
 
                     ocupados=st.session_state.ocupacion[bano]
-
                     num=len(ocupados)
 
+                    st.markdown('<div class="bano-card">',unsafe_allow_html=True)
 
                     st.subheader(f"{icono} {bano}")
 
@@ -239,92 +223,63 @@ else:
                         else:
                             bolas[i].markdown("🟢")
 
-                    # ALUMNOS
+                    st.markdown("---")
 
-for p_idx,p in enumerate(ocupados):
+                    # CABECERA
 
-    h_ent=datetime.strptime(p['h_entrada'],"%H:%M")
+                    cab=st.columns([3,2,1,1,1])
 
-    ahora=datetime.now()
+                    cab[0].markdown("**Alumno**")
+                    cab[1].markdown("**Curso**")
+                    cab[2].markdown("**Tiempo**")
+                    cab[3].markdown("**OK**")
+                    cab[4].markdown("**Salida**")
 
-    h_real=ahora.replace(hour=h_ent.hour,minute=h_ent.minute)
+                    for p_idx,p in enumerate(ocupados):
 
-    minutos=int((ahora-h_real).total_seconds()/60)
+                        h_ent=datetime.strptime(p['h_entrada'],"%H:%M")
+                        ahora=datetime.now()
+                        h_real=ahora.replace(hour=h_ent.hour,minute=h_ent.minute)
 
-    fila=st.columns([3,2,1,1,1])
+                        minutos=int((ahora-h_real).total_seconds()/60)
 
-    fila[0].markdown(f"**{p['alumno']}**")
+                        fila=st.columns([3,2,1,1,1])
 
-    fila[1].markdown(p['curso'])
+                        fila[0].markdown(f"**{p['alumno']}**")
+                        fila[1].markdown(p['curso'])
+                        fila[2].markdown(f"{minutos} min")
 
-    fila[2].markdown(f"⏱ {minutos} min")
+                        ok=fila[3].checkbox("",True,key=f"ok{bano}{p_idx}")
 
-    ok=fila[3].checkbox("",True,key=f"ok{bano}{p_idx}")
+                        if fila[4].button("Salida",key=f"fin{bano}{p_idx}"):
 
-    if fila[4].button("Salida",key=f"fin{bano}{p_idx}"):
+                            conn=init_db()
 
-        conn=init_db()
+                            conn.execute(
+                            """INSERT INTO visitas
+                            (planta,bano,alumno,curso,profesor,h_entrada,h_salida,estado_bano,observaciones)
+                            VALUES (?,?,?,?,?,?,?,?,?)""",
+                            (
+                            st.session_state.planta,
+                            bano,
+                            p['alumno'],
+                            p['curso'],
+                            p['profesor'],
+                            p['h_entrada'],
+                            datetime.now().strftime("%H:%M"),
+                            "OK" if ok else "Problema",
+                            ""
+                            )
+                            )
 
-        conn.execute(
+                            conn.commit()
+                            conn.close()
 
-        """INSERT INTO visitas
-        (planta,bano,alumno,curso,profesor,h_entrada,h_salida,estado_bano,observaciones)
-        VALUES (?,?,?,?,?,?,?,?,?)""",
+                            st.session_state.ocupacion[bano].remove(p)
 
-        (
-        st.session_state.planta,
-        bano,
-        p['alumno'],
-        p['curso'],
-        p['profesor'],
-        p['h_entrada'],
-        datetime.now().strftime("%H:%M"),
-        "OK" if ok else "Problema",
-        ""
-        )
+                            st.rerun()
 
-        )
-
-        conn.commit()
-
-        conn.close()
-
-        st.session_state.ocupacion[bano].remove(p)
-
-        st.rerun()
-                                conn=init_db()
-
-                                conn.execute(
-
-                                """INSERT INTO visitas
-                                (planta,bano,alumno,curso,profesor,h_entrada,h_salida,estado_bano,observaciones)
-                                VALUES (?,?,?,?,?,?,?,?,?)""",
-
-                                (
-
-                                st.session_state.planta,
-                                bano,
-                                p['alumno'],
-                                p['curso'],
-                                p['profesor'],
-                                p['h_entrada'],
-                                datetime.now().strftime("%H:%M"),
-                                "OK" if ok else "Problema",
-                                ""
-
-                                )
-
-                                )
-
-                                conn.commit()
-
-                                conn.close()
-
-                                st.session_state.ocupacion[bano].remove(p)
-
-                                st.rerun()
-
-                    # BOTONES ENTRADA
+                    st.markdown("---")
 
                     cols_entrada=st.columns(2)
 
@@ -361,16 +316,12 @@ for p_idx,p in enumerate(ocupados):
 
                     st.markdown('</div>',unsafe_allow_html=True)
 
-    # ---------------------------------------------------
     # HISTÓRICO
-    # ---------------------------------------------------
 
     with tab_stats:
 
         conn=init_db()
-
         df=pd.read_sql_query("SELECT * FROM visitas ORDER BY id DESC",conn)
-
         conn.close()
 
         if not df.empty:
@@ -380,14 +331,11 @@ for p_idx,p in enumerate(ocupados):
             csv=df.to_csv(index=False).encode('utf-8')
 
             st.download_button(
-
                 "Descargar CSV",
                 csv,
                 "historico.csv",
                 "text/csv"
-
             )
 
         else:
-
             st.info("No hay registros aún")
