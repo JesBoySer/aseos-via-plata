@@ -188,7 +188,7 @@ with st.sidebar:
     if st.session_state.planta is None:
         st.info("👈 Selecciona una planta para comenzar")
     else:
-        st.markdown(f"### 📍 Planta {st.session_state.planta}")
+        st.markdown(f"### Planta {st.session_state.planta}")
         if st.button("🔄 Cambiar planta", use_container_width=True):
             st.session_state.planta = None
             st.rerun()
