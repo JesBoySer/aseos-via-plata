@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------
-# ESTILOS VISUALES
+# ESTILOS
 # ---------------------------------------------------
 
 st.markdown("""
@@ -29,8 +29,6 @@ st.markdown("""
     font-family:'Inter',sans-serif;
 }
 
-/* TITULOS ZONA */
-
 .zona-titulo{
     font-size:1.6rem;
     font-weight:800;
@@ -40,71 +38,25 @@ st.markdown("""
     margin-bottom:20px;
 }
 
-/* TARJETAS BAÑO */
-
 .bano-card{
-
     background:#0F172A;
     padding:18px;
     border-radius:18px;
     border:1px solid #334155;
     margin-bottom:16px;
-
     transition:0.2s;
 }
 
 .bano-card:hover{
     border-color:#38BDF8;
-    box-shadow:0 0 0 2px rgba(56,189,248,0.3);
 }
 
-/* ESTADO */
-
-.estado-libre{
-    color:#22C55E;
-    font-weight:700;
+.estado-bolas{
+    font-size:22px;
 }
-
-.estado-usando{
-    color:#F59E0B;
-    font-weight:700;
-}
-
-.estado-lleno{
-    color:#EF4444;
-    font-weight:700;
-}
-
-/* BOTONES */
-
-.stButton>button{
-
-    background:linear-gradient(135deg,#38BDF8,#0EA5E9);
-    border:none;
-    border-radius:30px;
-    color:white;
-    font-weight:700;
-    padding:0.45rem 1rem;
-    font-size:0.9rem;
-}
-
-.stButton>button:hover{
-
-    background:linear-gradient(135deg,#7DD3FC,#38BDF8);
-
-}
-
-/* CHECKBOX VERDE */
 
 input[type="checkbox"]:checked{
     accent-color:#22C55E;
-}
-
-/* ALERTA TIEMPO */
-
-.alerta{
-    border-left:4px solid #EF4444;
-    padding-left:6px;
 }
 
 </style>
@@ -140,7 +92,7 @@ def init_db():
     return conn
 
 # ---------------------------------------------------
-# CARGA DE CSV
+# CARGA CSV
 # ---------------------------------------------------
 
 @st.cache_data
@@ -277,49 +229,46 @@ else:
 
                     st.subheader(f"{icono} {bano}")
 
-                    if num==0:
+                    # BOLAS ESTADO
 
-                        st.markdown('<span class="estado-libre">🟢 Libre</span>',unsafe_allow_html=True)
+                    bolas=st.columns(2)
 
-                    elif num==1:
+                    for i in range(2):
 
-                        st.markdown('<span class="estado-usando">⏳ En uso</span>',unsafe_allow_html=True)
+                        if i < num:
+                            bolas[i].markdown("🔴")
+                        else:
+                            bolas[i].markdown("🟢")
 
-                    else:
+                    # ALUMNOS
 
-                        st.markdown('<span class="estado-lleno">🚫 Ocupado</span>',unsafe_allow_html=True)
-
-                    st.progress(num/2,text=f"Aforo {num}/2")
-
-                    # PERSONAS
+                    cols_personas=st.columns(2)
 
                     for p_idx,p in enumerate(ocupados):
 
-                        h_ent=datetime.strptime(p['h_entrada'],"%H:%M")
+                        with cols_personas[p_idx]:
 
-                        ahora=datetime.now()
+                            h_ent=datetime.strptime(p['h_entrada'],"%H:%M")
 
-                        h_real=ahora.replace(hour=h_ent.hour,minute=h_ent.minute)
+                            ahora=datetime.now()
 
-                        minutos=int((ahora-h_real).total_seconds()/60)
+                            h_real=ahora.replace(hour=h_ent.hour,minute=h_ent.minute)
 
-                        alerta = "alerta" if minutos>=10 else ""
+                            minutos=int((ahora-h_real).total_seconds()/60)
 
-                        cols=st.columns([3,2,1,0.7,1])
+                            st.markdown(f"**{p['alumno']}**")
 
-                        cols[0].markdown(f"**{p['alumno']}**")
+                            st.caption(p['curso'])
 
-                        cols[1].markdown(p['curso'])
+                            st.write(f"⏱ {minutos} min")
 
-                        cols[2].markdown(f"⏱ {minutos} min")
+                            ok=st.checkbox("✔",True,key=f"ok{bano}{p_idx}")
 
-                        ok=cols[3].checkbox("✔",True,key=f"ok{bano}{p_idx}")
+                            if st.button("Salida",key=f"fin{bano}{p_idx}"):
 
-                        if cols[4].button("Salida",key=f"fin{bano}{p_idx}"):
+                                conn=init_db()
 
-                            conn=init_db()
-
-                            conn.execute(
+                                conn.execute(
 
                                 """INSERT INTO visitas
                                 (planta,bano,alumno,curso,profesor,h_entrada,h_salida,estado_bano,observaciones)
@@ -339,44 +288,50 @@ else:
 
                                 )
 
-                            )
+                                )
 
-                            conn.commit()
+                                conn.commit()
 
-                            conn.close()
+                                conn.close()
 
-                            st.session_state.ocupacion[bano].remove(p)
-
-                            st.rerun()
-
-                    # NUEVA VISITA
-
-                    if num<2:
-
-                        with st.popover("➕ Nueva visita"):
-
-                            cursos=sorted(df_alumnos['Curso'].unique())
-
-                            curso=st.selectbox("Curso",cursos,key=bano+"c")
-
-                            alumnos=df_alumnos[df_alumnos['Curso']==curso]['Nombre']
-
-                            alumno=st.selectbox("Alumno",sorted(alumnos),key=bano+"a")
-
-                            prof=st.selectbox("Autoriza",lista_profesores,key=bano+"p")
-
-                            if st.button("Registrar entrada",key=bano+"ok"):
-
-                                st.session_state.ocupacion[bano].append({
-
-                                "alumno":alumno,
-                                "curso":curso,
-                                "profesor":prof,
-                                "h_entrada":datetime.now().strftime("%H:%M")
-
-                                })
+                                st.session_state.ocupacion[bano].remove(p)
 
                                 st.rerun()
+
+                    # BOTONES ENTRADA
+
+                    cols_entrada=st.columns(2)
+
+                    for plaza in range(2):
+
+                        if plaza >= num:
+
+                            with cols_entrada[plaza]:
+
+                                with st.popover(f"➕ Entrada {plaza+1}"):
+
+                                    cursos=sorted(df_alumnos['Curso'].unique())
+
+                                    curso=st.selectbox("Curso",cursos,key=bano+f"c{plaza}")
+
+                                    alumnos=df_alumnos[df_alumnos['Curso']==curso]['Nombre']
+
+                                    alumno=st.selectbox("Alumno",sorted(alumnos),key=bano+f"a{plaza}")
+
+                                    prof=st.selectbox("Autoriza",lista_profesores,key=bano+f"p{plaza}")
+
+                                    if st.button("Registrar entrada",key=bano+f"ok{plaza}"):
+
+                                        st.session_state.ocupacion[bano].append({
+
+                                        "alumno":alumno,
+                                        "curso":curso,
+                                        "profesor":prof,
+                                        "h_entrada":datetime.now().strftime("%H:%M")
+
+                                        })
+
+                                        st.rerun()
 
                     st.markdown('</div>',unsafe_allow_html=True)
 
