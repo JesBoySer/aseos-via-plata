@@ -6,38 +6,54 @@ from datetime import datetime
 from github import Github
 from streamlit_autorefresh import st_autorefresh
 
-# refresco automático cada 30s
-st_autorefresh(interval=30000, key="refresh")
-
 st.set_page_config(
-    page_title="SCA - Control de Aseos",
-    page_icon="🚾",
-    layout="wide"
+    page_title="SCA - IES Vía de la Plata",
+    layout="wide",
+    page_icon="🚾"
 )
 
-# ----------------------------
-# CSS (colores bien visibles)
-# ----------------------------
+st_autorefresh(interval=30000, key="refresh")
+
+# -------------------------
+# ESTILOS
+# -------------------------
 
 st.markdown("""
 <style>
 
-.stApp {
-background-color:#0f172a;
-color:#f1f5f9;
+.stApp{
+background:#0B1120;
+color:#E2E8F0;
 }
 
-h1,h2,h3,h4 {
+h1,h2,h3,h4{
 color:white;
 }
 
-button {
-color:white !important;
-font-weight:bold !important;
+.stButton>button{
+border:2px solid #38BDF8;
+border-radius:10px;
+color:#F8FAFC;
+background:#1E293B;
+font-weight:600;
 }
 
-textarea {
-background:#1e293b !important;
+.stButton>button:hover{
+background:#2563EB;
+color:white;
+}
+
+.header-box{
+border:2px solid #38BDF8;
+padding:6px;
+border-radius:6px;
+text-align:center;
+font-weight:bold;
+background:#020617;
+}
+
+textarea{
+background:#1E293B !important;
 color:white !important;
 height:150px !important;
 }
@@ -45,9 +61,9 @@ height:150px !important;
 </style>
 """, unsafe_allow_html=True)
 
-# ----------------------------
+# -------------------------
 # BASE DE DATOS
-# ----------------------------
+# -------------------------
 
 def init_db():
 
@@ -72,13 +88,12 @@ def init_db():
     """)
 
     conn.commit()
-
     return conn
 
 
-# ----------------------------
+# -------------------------
 # GUARDAR EN GITHUB
-# ----------------------------
+# -------------------------
 
 def save_to_github(df):
 
@@ -112,9 +127,10 @@ def save_to_github(df):
             contenido
         )
 
-# ----------------------------
-# CARGA ALUMNOS Y PROFESORES
-# ----------------------------
+
+# -------------------------
+# CARGA DATOS
+# -------------------------
 
 @st.cache_data
 def cargar_datos():
@@ -126,12 +142,11 @@ def cargar_datos():
 
 
 df_alumnos,df_profesores=cargar_datos()
-
 lista_profesores=df_profesores["Nombre"].tolist()
 
-# ----------------------------
+# -------------------------
 # ESTADO
-# ----------------------------
+# -------------------------
 
 if "planta" not in st.session_state:
     st.session_state.planta=None
@@ -156,9 +171,9 @@ if "ocupacion" not in st.session_state:
 if "editar" not in st.session_state:
     st.session_state.editar={}
 
-# ----------------------------
+# -------------------------
 # SIDEBAR
-# ----------------------------
+# -------------------------
 
 with st.sidebar:
 
@@ -173,13 +188,13 @@ with st.sidebar:
             st.session_state.planta=None
             st.rerun()
 
-# ----------------------------
+# -------------------------
 # SELECCIÓN PLANTA
-# ----------------------------
+# -------------------------
 
 if st.session_state.planta is None:
 
-    st.title("Sistema Control Aseos")
+    st.title("Sistema Control de Aseos")
 
     c1,c2=st.columns(2)
 
@@ -193,20 +208,20 @@ if st.session_state.planta is None:
 
     st.stop()
 
-# ----------------------------
+# -------------------------
 # PESTAÑAS
-# ----------------------------
+# -------------------------
 
-tab_panel,tab_hist=st.tabs(["Panel de baños","Histórico"])
-
-# ----------------------------
-# PANEL BAÑOS
-# ----------------------------
+tab_panel,tab_hist=st.tabs(["Panel","Histórico"])
 
 zonas={
 "NORTE":["Chicos Norte","Chicas Norte"],
 "SUR":["Chicos Sur","Chicas Sur"]
 }
+
+# -------------------------
+# PANEL
+# -------------------------
 
 with tab_panel:
 
@@ -218,21 +233,20 @@ with tab_panel:
 
         for i,bano in enumerate(banos):
 
-            col=col1 if i==0 else col2
+            cont=col1 if i==0 else col2
 
-            with col:
+            with cont:
 
                 st.markdown(f"### {bano}")
 
-                # CABECERA
                 cab=st.columns([1,3,2,2,1,1])
 
-                cab[0].markdown("**Estado**")
-                cab[1].markdown("**Alumno**")
-                cab[2].markdown("**Curso**")
-                cab[3].markdown("**Minutos**")
-                cab[4].markdown("**OK**")
-                cab[5].markdown("**Salida**")
+                cab[0].markdown('<div class="header-box">Estado</div>',unsafe_allow_html=True)
+                cab[1].markdown('<div class="header-box">Alumno</div>',unsafe_allow_html=True)
+                cab[2].markdown('<div class="header-box">Curso</div>',unsafe_allow_html=True)
+                cab[3].markdown('<div class="header-box">Minutos</div>',unsafe_allow_html=True)
+                cab[4].markdown('<div class="header-box">OK</div>',unsafe_allow_html=True)
+                cab[5].markdown('<div class="header-box">Salida</div>',unsafe_allow_html=True)
 
                 ocupados=st.session_state.ocupacion[st.session_state.planta][bano]
 
@@ -240,7 +254,7 @@ with tab_panel:
 
                     cols=st.columns([1,3,2,2,1,1])
 
-                    key=f"{bano}_{fila}"
+                    key=f"{bano}_{fila}_{st.session_state.planta}"
 
                     if fila<len(ocupados):
 
@@ -265,11 +279,7 @@ with tab_panel:
                         obs=""
 
                         if not ok:
-
-                            obs=st.text_area(
-                            "Observaciones",
-                            key=f"obs_{key}"
-                            )
+                            obs=st.text_area("Observaciones",key=f"obs_{key}")
 
                         if cols[5].button("Salida",key=f"fin_{key}"):
 
@@ -295,10 +305,7 @@ with tab_panel:
 
                             conn.commit()
 
-                            df=pd.read_sql_query(
-                            "SELECT * FROM visitas",
-                            conn)
-
+                            df=pd.read_sql_query("SELECT * FROM visitas",conn)
                             conn.close()
 
                             save_to_github(df)
@@ -352,9 +359,9 @@ with tab_panel:
                                 st.session_state.editar[key]=False
                                 st.rerun()
 
-# ----------------------------
+# -------------------------
 # HISTORICO
-# ----------------------------
+# -------------------------
 
 with tab_hist:
 
@@ -372,12 +379,6 @@ with tab_hist:
     conn.close()
 
     if len(df)==0:
-
         st.info("No hay visitas registradas")
-
     else:
-
-        st.dataframe(
-        df,
-        use_container_width=True
-        )
+        st.dataframe(df,use_container_width=True)
