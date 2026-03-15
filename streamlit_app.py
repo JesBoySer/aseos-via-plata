@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
-# --- Auto-refresco cada 30 segundos ---
+# --- Auto-refresh cada 30s ---
 st_autorefresh(interval=30000, key="refresh")
 
 # --- Configuración página ---
@@ -15,7 +15,7 @@ st.set_page_config(
     page_icon="🚾"
 )
 
-# --- CSS Mejorado ---
+# --- CSS ---
 st.markdown("""
 <style>
 .stApp {background:#0B1120;color:#E2E8F0;font-family:'Inter',sans-serif;}
@@ -109,13 +109,13 @@ else:
                     num = len(ocupados)
 
                     # Tabla encabezado
-                    cols_tab = st.columns([1.2,3,2,1,1,1])
+                    cols_tab = st.columns([1.2,3,2,2,1,1])
                     for c,h in zip(cols_tab,["Estado","Alumno","Curso","Tiempo","OK","Salida"]):
                         c.markdown(f"**{h}**")
                     
                     # Dos filas por baño
                     for i in range(2):
-                        fila = st.columns([1.2,3,2,1,1,1])
+                        fila = st.columns([1.2,3,2,2,1,1])
                         key_fila=f"{bano}_{i}"
                         if i<num:
                             p=ocupados[i]
@@ -169,13 +169,40 @@ else:
                                         st.session_state.editar[key_fila]=False
                                         st.rerun()
 
-    # --- Histórico ---
+    # --- Estadísticas e histórico ---
     with tab_stats:
         conn=init_db()
         df=pd.read_sql_query("SELECT * FROM visitas ORDER BY id DESC",conn)
         conn.close()
         if not df.empty:
+            # Calcular tiempo de estancia
+            def calc_tiempo(row):
+                try:
+                    h_ent=datetime.strptime(row['h_entrada'],'%H:%M')
+                    h_sal=datetime.strptime(row['h_salida'],'%H:%M')
+                    minutos=int((h_sal-h_ent).total_seconds()/60)
+                    return max(minutos,0)
+                except:
+                    return None
+            df['Tiempo min'] = df.apply(calc_tiempo,axis=1)
+
+            st.subheader("📊 Resumen General")
+            col1,col2,col3,col4,col5=st.columns(5)
+            col1.metric("Total visitas",len(df))
+            col2.metric("OK",(df['estado_bano']=='OK').sum())
+            col3.metric("Problema",(df['estado_bano']=='Problema').sum())
+            col4.metric("Alumnos distintos",df['alumno'].nunique())
+            col5.metric("Tiempo medio (min)",round(df['Tiempo min'].mean(),1))
+            
+            st.subheader("Distribución de visitas por hora")
+            df['h_entrada_dt']=pd.to_datetime(df['h_entrada'],format='%H:%M',errors='coerce')
+            df['hora']=df['h_entrada_dt'].dt.hour
+            visitas_hora=df.groupby('hora').size().reset_index(name='count')
+            st.bar_chart(visitas_hora.set_index('hora'))
+
+            st.subheader("Histórico detallado")
             st.dataframe(df,use_container_width=True)
             csv=df.to_csv(index=False).encode('utf-8')
             st.download_button("Descargar CSV",csv,"historico.csv","text/csv")
-        else: st.info("No hay registros aún")
+        else:
+            st.info("No hay registros aún")
