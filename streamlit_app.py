@@ -3,7 +3,6 @@ import pandas as pd
 import sqlite3
 import os
 from datetime import datetime
-from github import Github
 from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(
@@ -66,59 +65,25 @@ height:150px !important;
 # -------------------------
 
 def init_db():
-
     if not os.path.exists("data"):
         os.makedirs("data")
-
     conn = sqlite3.connect("data/historico.sqlite", check_same_thread=False)
-
     conn.execute("""
     CREATE TABLE IF NOT EXISTS visitas(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    planta TEXT,
-    bano TEXT,
-    alumno TEXT,
-    curso TEXT,
-    profesor TEXT,
-    h_entrada TEXT,
-    h_salida TEXT,
-    estado TEXT,
-    observaciones TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        planta TEXT,
+        bano TEXT,
+        alumno TEXT,
+        curso TEXT,
+        profesor TEXT,
+        h_entrada TEXT,
+        h_salida TEXT,
+        estado TEXT,
+        observaciones TEXT
     )
     """)
-
     conn.commit()
     return conn
-
-
-# -------------------------
-# GUARDAR EN GITHUB
-# -------------------------
-
-def save_to_github(df_sqlite):
-
-    token = st.secrets["GITHUB_TOKEN"]
-    repo_name = st.secrets["GITHUB_REPO"]
-
-    g = Github(token)
-    repo = g.get_repo(repo_name)
-
-    ruta = "data/historico.csv"
-
-    # Convertimos a CSV
-    csv_path = "data/historico.csv"
-    df_sqlite.to_csv(csv_path, index=False)
-
-    try:
-        archivo = repo.get_contents(ruta)
-        contenido = archivo.decoded_content.decode("utf-8")
-        df_github = pd.read_csv(pd.io.common.StringIO(contenido))
-        df_total = pd.concat([df_github, df_sqlite]).drop_duplicates()
-        csv = df_total.to_csv(index=False)
-        repo.update_file(ruta, f"Actualizar histórico {datetime.now()}", csv, archivo.sha)
-    except:
-        repo.create_file(ruta, f"Crear histórico {datetime.now()}", open(csv_path, "r").read())
-
 
 # -------------------------
 # CARGA DATOS
@@ -142,18 +107,8 @@ if "planta" not in st.session_state:
 
 if "ocupacion" not in st.session_state:
     st.session_state.ocupacion = {
-        "Primera":{
-            "Chicos Norte":[],
-            "Chicas Norte":[],
-            "Chicos Sur":[],
-            "Chicas Sur":[]
-        },
-        "Segunda":{
-            "Chicos Norte":[],
-            "Chicas Norte":[],
-            "Chicos Sur":[],
-            "Chicas Sur":[]
-        }
+        "Primera": {"Chicos Norte":[], "Chicas Norte":[], "Chicos Sur":[], "Chicas Sur":[]},
+        "Segunda": {"Chicos Norte":[], "Chicas Norte":[], "Chicos Sur":[], "Chicas Sur":[]}
     }
 
 if "editar" not in st.session_state:
@@ -206,17 +161,17 @@ with tab_panel:
         st.subheader(zona)
         col1, col2 = st.columns(2)
         for i, bano in enumerate(banos):
-            cont = col1 if i==0 else col2
+            cont = col1 if i == 0 else col2
             with cont:
-                icono = "🚹" if "Chicos" in bano else "🚺" 
+                icono = "🚹" if "Chicos" in bano else "🚺"
                 st.markdown(f"### {icono} {bano}")
                 cab = st.columns([1,3,2,2,1,1])
-                cab[0].markdown("**Estado**")
-                cab[1].markdown("**Alumno**")
-                cab[2].markdown("**Curso**")
-                cab[3].markdown("**Minutos**")
-                cab[4].markdown("**OK**")
-                cab[5].markdown("**Salida**")
+                cab[0].markdown("Estado")
+                cab[1].markdown("Alumno")
+                cab[2].markdown("Curso")
+                cab[3].markdown("Minutos")
+                cab[4].markdown("OK")
+                cab[5].markdown("Salida")
 
                 ocupados = st.session_state.ocupacion[st.session_state.planta][bano]
 
@@ -229,6 +184,7 @@ with tab_panel:
                         h_ent = datetime.strptime(p["h_entrada"], "%H:%M")
                         ahora = datetime.now()
                         minutos = int((ahora - h_ent.replace(year=ahora.year, month=ahora.month, day=ahora.day)).total_seconds()/60)
+
                         cols[0].button("🔴", key=f"estado_{key}")
                         cols[1].write(p["alumno"])
                         cols[2].write(p["curso"])
@@ -241,8 +197,7 @@ with tab_panel:
                             conn = init_db()
                             conn.execute("""
                                 INSERT INTO visitas
-                                (planta,bano,alumno,curso,profesor,
-                                h_entrada,h_salida,estado,observaciones)
+                                (planta,bano,alumno,curso,profesor,h_entrada,h_salida,estado,observaciones)
                                 VALUES (?,?,?,?,?,?,?,?,?)
                             """, (
                                 st.session_state.planta,
@@ -256,9 +211,7 @@ with tab_panel:
                                 obs
                             ))
                             conn.commit()
-                            df = pd.read_sql_query("SELECT * FROM visitas", conn)
                             conn.close()
-                            save_to_github(df)
                             st.session_state.ocupacion[st.session_state.planta][bano].remove(p)
                             st.rerun()
                     else:
@@ -266,33 +219,20 @@ with tab_panel:
                             st.session_state.editar[key] = False
                         if cols[0].button("🟢", key=f"libre_{key}"):
                             st.session_state.editar[key] = not st.session_state.editar[key]
-
                         if st.session_state.editar[key]:
-                            # Cursos, alumnos y profesores con placeholder
-                            cursos_disponibles = [""] + sorted(df_alumnos["Curso"].unique())
-                            curso = st.selectbox("Curso", cursos_disponibles, key=f"curso_{key}")
-
-                            if curso != "":
-                                alumnos_disponibles = [""] + df_alumnos[df_alumnos["Curso"]==curso]["Nombre"].tolist()
-                            else:
-                                alumnos_disponibles = [""]
-
-                            alumno = st.selectbox("Alumno", alumnos_disponibles, key=f"alumno_{key}")
-
-                            profesor = st.selectbox("Profesor", [""] + lista_profesores, key=f"prof_{key}")
-
+                            curso = st.selectbox("Curso", sorted(df_alumnos["Curso"].unique()), key=f"curso_{key}", index=-1, help="Seleccione curso")
+                            alumnos_disponibles = df_alumnos[df_alumnos["Curso"]==curso]["Nombre"].tolist() if curso else []
+                            alumno = st.selectbox("Alumno", alumnos_disponibles, key=f"alumno_{key}", index=-1, help="Seleccione alumno")
+                            profesor = st.selectbox("Profesor", lista_profesores, key=f"prof_{key}", index=-1, help="Seleccione profesor")
                             if st.button("Registrar entrada", key=f"entrada_{key}"):
-                                if curso and alumno and profesor:
-                                    st.session_state.ocupacion[st.session_state.planta][bano].append({
-                                        "alumno": alumno,
-                                        "curso": curso,
-                                        "profesor": profesor,
-                                        "h_entrada": datetime.now().strftime("%H:%M")
-                                    })
-                                    st.session_state.editar[key] = False
-                                    st.rerun()
-                                else:
-                                    st.warning("Debes seleccionar curso, alumno y profesor antes de registrar")
+                                st.session_state.ocupacion[st.session_state.planta][bano].append({
+                                    "alumno": alumno,
+                                    "curso": curso,
+                                    "profesor": profesor,
+                                    "h_entrada": datetime.now().strftime("%H:%M")
+                                })
+                                st.session_state.editar[key] = False
+                                st.rerun()
 
 # -------------------------
 # HISTORICO
