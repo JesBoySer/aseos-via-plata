@@ -241,30 +241,57 @@ else:
 
                     # ALUMNOS
 
-                    cols_personas=st.columns(2)
+for p_idx,p in enumerate(ocupados):
 
-                    for p_idx,p in enumerate(ocupados):
+    h_ent=datetime.strptime(p['h_entrada'],"%H:%M")
 
-                        with cols_personas[p_idx]:
+    ahora=datetime.now()
 
-                            h_ent=datetime.strptime(p['h_entrada'],"%H:%M")
+    h_real=ahora.replace(hour=h_ent.hour,minute=h_ent.minute)
 
-                            ahora=datetime.now()
+    minutos=int((ahora-h_real).total_seconds()/60)
 
-                            h_real=ahora.replace(hour=h_ent.hour,minute=h_ent.minute)
+    fila=st.columns([3,2,1,1,1])
 
-                            minutos=int((ahora-h_real).total_seconds()/60)
+    fila[0].markdown(f"**{p['alumno']}**")
 
-                            st.markdown(f"**{p['alumno']}**")
+    fila[1].markdown(p['curso'])
 
-                            st.caption(p['curso'])
+    fila[2].markdown(f"⏱ {minutos} min")
 
-                            st.write(f"⏱ {minutos} min")
+    ok=fila[3].checkbox("",True,key=f"ok{bano}{p_idx}")
 
-                            ok=st.checkbox("✔",True,key=f"ok{bano}{p_idx}")
+    if fila[4].button("Salida",key=f"fin{bano}{p_idx}"):
 
-                            if st.button("Salida",key=f"fin{bano}{p_idx}"):
+        conn=init_db()
 
+        conn.execute(
+
+        """INSERT INTO visitas
+        (planta,bano,alumno,curso,profesor,h_entrada,h_salida,estado_bano,observaciones)
+        VALUES (?,?,?,?,?,?,?,?,?)""",
+
+        (
+        st.session_state.planta,
+        bano,
+        p['alumno'],
+        p['curso'],
+        p['profesor'],
+        p['h_entrada'],
+        datetime.now().strftime("%H:%M"),
+        "OK" if ok else "Problema",
+        ""
+        )
+
+        )
+
+        conn.commit()
+
+        conn.close()
+
+        st.session_state.ocupacion[bano].remove(p)
+
+        st.rerun()
                                 conn=init_db()
 
                                 conn.execute(
