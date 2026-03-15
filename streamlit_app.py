@@ -54,11 +54,11 @@ if st.session_state.planta is None:
     st.title("🏛️ Control de Accesos - IES Vía de la Plata")
     st.info("Bienvenido. Por favor, seleccione su ubicación de guardia.")
     col_p1, col_p2 = st.columns(2)
-    if col_p1.button("🏢 PLANTA BAJA", use_container_width=True, key="p_baja"):
-        st.session_state.planta = "Baja"
-        st.rerun()
-    if col_p2.button("🏢 PLANTA PRIMERA", use_container_width=True, key="p_alta"):
+    if col_p1.button("🏢 PLANTA PRIMERA", use_container_width=True, key="p_primera"):
         st.session_state.planta = "Primera"
+        st.rerun()
+    if col_p2.button("🏢 PLANTA SEGUNDA", use_container_width=True, key="p_segunda"):
+        st.session_state.planta = "Segunda"
         st.rerun()
 else:
     # Barra lateral de navegación
