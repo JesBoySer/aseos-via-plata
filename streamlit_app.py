@@ -211,7 +211,7 @@ else:
     with tab_mapa:
         for nombre_zona, lista_banos in zonas_fisicas.items():
             with st.container():
-                st.markdown(f'<div class="zona-container"><div class="zona-titulo">📍 {nombre_zona}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="zona-container"><div class="zona-titulo"> {nombre_zona}</div>', unsafe_allow_html=True)
                 
                 col_izq, col_der = st.columns(2)
                 for idx_b, bano in enumerate(lista_banos):
