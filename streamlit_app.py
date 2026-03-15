@@ -11,7 +11,7 @@ st.set_page_config(
     page_icon="🚾"
 )
 
-# --- 2. CSS MEJORADO (SIN CONTENEDORES EXTERNOS) ---
+# --- 2. CSS MEJORADO (SIN RECTÁNGULO EXTERIOR) ---
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
@@ -23,7 +23,12 @@ st.markdown("""
     color: #E2E8F0;
 }
 
-/* Título de zona (NORTE / SUR) - ahora sin contenedor padre */
+/* Contenedor de zona (ahora solo margen, sin fondo ni borde) */
+.zona-container {
+    margin-bottom: 2rem;
+}
+
+/* Título de zona (NORTE / SUR) */
 .zona-titulo {
     color: #38BDF8 !important;
     font-weight: 800;
@@ -31,7 +36,7 @@ st.markdown("""
     letter-spacing: -0.02em;
     border-bottom: 2px solid #38BDF8;
     padding-bottom: 0.5rem;
-    margin: 1rem 0 1.5rem 0;  /* separación superior e inferior */
+    margin-bottom: 1.5rem;
     text-shadow: 0 2px 4px rgba(56,189,248,0.2);
 }
 
@@ -99,13 +104,21 @@ st.markdown("""
     color: white;
 }
 
+/* Expander (por si acaso) */
+.streamlit-expanderHeader {
+    background-color: #1E293B;
+    border-radius: 40px;
+    border: 1px solid #334155;
+    font-weight: 600;
+}
+
 /* Sidebar */
 .css-1d391kg, .css-1wrcr25 {
     background-color: #0F172A;
     border-right: 1px solid #334155;
 }
 
-/* Barra de progreso */
+/* Barra de progreso personalizada (la de st.progress ya se ve bien) */
 .stProgress > div > div > div {
     background-color: #38BDF8;
 }
@@ -197,78 +210,76 @@ else:
 
     with tab_mapa:
         for nombre_zona, lista_banos in zonas_fisicas.items():
-            # Título de la zona (sin contenedor adicional)
-            st.markdown(f'<div class="zona-titulo">📍 {nombre_zona}</div>', unsafe_allow_html=True)
-            
-            # Dos columnas para los baños
-            col_izq, col_der = st.columns(2)
-            for idx_b, bano in enumerate(lista_banos):
-                with col_izq if idx_b == 0 else col_der:
-                    # Tarjeta del baño
-                    st.markdown('<div class="bano-block">', unsafe_allow_html=True)
-                    
-                    icono = "🚹" if "Chicos" in bano else "🚺"
-                    st.markdown(f"#### {icono} {bano}")
-                    
-                    ocupados = st.session_state.ocupacion[bano]
-                    num_ocupados = len(ocupados)
-                    st.progress(num_ocupados / 2, text=f"{num_ocupados}/2 ocupados")
-                    
-                    # Lista de alumnos dentro
-                    for p_idx, p in enumerate(ocupados):
-                        h_ent = datetime.strptime(p['h_entrada'], "%H:%M")
-                        ahora = datetime.now()
-                        h_ent_completa = ahora.replace(hour=h_ent.hour, minute=h_ent.minute, second=0, microsecond=0)
-                        minutos = int((ahora - h_ent_completa).total_seconds() // 60)
+            with st.container():
+                st.markdown(f'<div class="zona-container"><div class="zona-titulo">📍 {nombre_zona}</div>', unsafe_allow_html=True)
+                
+                col_izq, col_der = st.columns(2)
+                for idx_b, bano in enumerate(lista_banos):
+                    with col_izq if idx_b == 0 else col_der:
+                        st.markdown('<div class="bano-block">', unsafe_allow_html=True)
                         
-                        with st.container():
-                            if minutos >= 10:
-                                st.markdown('<div class="alerta-bano">', unsafe_allow_html=True)
+                        icono = "🚹" if "Chicos" in bano else "🚺"
+                        st.markdown(f"#### {icono} {bano}")
+                        
+                        ocupados = st.session_state.ocupacion[bano]
+                        num_ocupados = len(ocupados)
+                        st.progress(num_ocupados / 2, text=f"{num_ocupados}/2 ocupados")
+                        
+                        for p_idx, p in enumerate(ocupados):
+                            h_ent = datetime.strptime(p['h_entrada'], "%H:%M")
+                            ahora = datetime.now()
+                            h_ent_completa = ahora.replace(hour=h_ent.hour, minute=h_ent.minute, second=0, microsecond=0)
+                            minutos = int((ahora - h_ent_completa).total_seconds() // 60)
                             
-                            cols = st.columns([2, 1.5, 1, 0.8, 1.2])
-                            cols[0].markdown(f"**{p['alumno']}**")
-                            cols[1].markdown(f"*{p['curso']}*")
-                            cols[2].markdown(f"⏱️ {minutos}'")
-                            
-                            ok_key = f"ok_{bano}_{p_idx}"
-                            ok_val = cols[3].checkbox("✔️", value=True, key=ok_key, label_visibility="collapsed")
-                            
-                            if cols[4].button("🏁", key=f"fin_{bano}_{p_idx}"):
-                                conn = init_db()
-                                conn.execute("""INSERT INTO visitas 
-                                    (planta, bano, alumno, curso, profesor, h_entrada, h_salida, estado_bano, observaciones) 
-                                    VALUES (?,?,?,?,?,?,?,?,?)""",
-                                    (st.session_state.planta, bano, p['alumno'], p['curso'], p['profesor'], 
-                                     p['h_entrada'], datetime.now().strftime("%H:%M"), 
-                                     "OK" if ok_val else "Problema", ""))
-                                conn.commit()
-                                conn.close()
-                                st.session_state.ocupacion[bano].remove(p)
-                                st.rerun()
-                            
-                            if minutos >= 10:
-                                st.markdown('</div>', unsafe_allow_html=True)
-                            else:
-                                st.markdown("<hr style='margin:8px 0; opacity:0.3;'>", unsafe_allow_html=True)
-                    
-                    # Botón para añadir nueva entrada
-                    if num_ocupados < 2:
-                        with st.popover("➕ Registrar Entrada", use_container_width=True):
-                            cursos_disponibles = sorted(df_alumnos['Curso'].unique())
-                            curs_sel = st.selectbox("Curso", cursos_disponibles, key=f"sel_c_{bano}")
-                            nombres_f = df_alumnos[df_alumnos['Curso'] == curs_sel]['Nombre']
-                            alum_sel = st.selectbox("Alumno/a", sorted(nombres_f), key=f"sel_a_{bano}")
-                            prof_sel = st.selectbox("Autoriza", sorted(lista_profesores), key=f"sel_p_{bano}")
-                            if st.button("Confirmar entrada", key=f"conf_{bano}", use_container_width=True):
-                                st.session_state.ocupacion[bano].append({
-                                    "alumno": alum_sel, "curso": curs_sel, "profesor": prof_sel,
-                                    "h_entrada": datetime.now().strftime("%H:%M")
-                                })
-                                st.rerun()
-                    else:
-                        st.warning("⚠️ Aforo completo (2/2)")
-                    
-                    st.markdown('</div>', unsafe_allow_html=True)  # cierre bano-block
+                            with st.container():
+                                if minutos >= 10:
+                                    st.markdown('<div class="alerta-bano">', unsafe_allow_html=True)
+                                
+                                cols = st.columns([2, 1.5, 1, 0.8, 1.2])
+                                cols[0].markdown(f"**{p['alumno']}**")
+                                cols[1].markdown(f"*{p['curso']}*")
+                                cols[2].markdown(f"⏱️ {minutos}'")
+                                
+                                ok_key = f"ok_{bano}_{p_idx}"
+                                ok_val = cols[3].checkbox("✔️", value=True, key=ok_key, label_visibility="collapsed")
+                                
+                                if cols[4].button("🏁", key=f"fin_{bano}_{p_idx}"):
+                                    conn = init_db()
+                                    conn.execute("""INSERT INTO visitas 
+                                        (planta, bano, alumno, curso, profesor, h_entrada, h_salida, estado_bano, observaciones) 
+                                        VALUES (?,?,?,?,?,?,?,?,?)""",
+                                        (st.session_state.planta, bano, p['alumno'], p['curso'], p['profesor'], 
+                                         p['h_entrada'], datetime.now().strftime("%H:%M"), 
+                                         "OK" if ok_val else "Problema", ""))
+                                    conn.commit()
+                                    conn.close()
+                                    st.session_state.ocupacion[bano].remove(p)
+                                    st.rerun()
+                                
+                                if minutos >= 10:
+                                    st.markdown('</div>', unsafe_allow_html=True)
+                                else:
+                                    st.markdown("<hr style='margin:8px 0; opacity:0.3;'>", unsafe_allow_html=True)
+                        
+                        if num_ocupados < 2:
+                            with st.popover("➕ Registrar Entrada", use_container_width=True):
+                                cursos_disponibles = sorted(df_alumnos['Curso'].unique())
+                                curs_sel = st.selectbox("Curso", cursos_disponibles, key=f"sel_c_{bano}")
+                                nombres_f = df_alumnos[df_alumnos['Curso'] == curs_sel]['Nombre']
+                                alum_sel = st.selectbox("Alumno/a", sorted(nombres_f), key=f"sel_a_{bano}")
+                                prof_sel = st.selectbox("Autoriza", sorted(lista_profesores), key=f"sel_p_{bano}")
+                                if st.button("Confirmar entrada", key=f"conf_{bano}", use_container_width=True):
+                                    st.session_state.ocupacion[bano].append({
+                                        "alumno": alum_sel, "curso": curs_sel, "profesor": prof_sel,
+                                        "h_entrada": datetime.now().strftime("%H:%M")
+                                    })
+                                    st.rerun()
+                        else:
+                            st.warning("⚠️ Aforo completo (2/2)")
+                        
+                        st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('</div>', unsafe_allow_html=True)
 
     with tab_stats:
         st.markdown("### 📊 Registro de Visitas")
