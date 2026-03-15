@@ -220,10 +220,17 @@ with tab_panel:
                         if cols[0].button("🟢", key=f"libre_{key}"):
                             st.session_state.editar[key] = not st.session_state.editar[key]
                         if st.session_state.editar[key]:
-                            curso = st.selectbox("Curso", sorted(df_alumnos["Curso"].unique()), key=f"curso_{key}", index=-1, help="Seleccione curso")
-                            alumnos_disponibles = df_alumnos[df_alumnos["Curso"]==curso]["Nombre"].tolist() if curso else []
-                            alumno = st.selectbox("Alumno", alumnos_disponibles, key=f"alumno_{key}", index=-1, help="Seleccione alumno")
-                            profesor = st.selectbox("Profesor", lista_profesores, key=f"prof_{key}", index=-1, help="Seleccione profesor")
+                            # Selectboxes con placeholders seguros
+                            cursos_disponibles = sorted(df_alumnos["Curso"].unique())
+                            if len(cursos_disponibles) == 0:
+                                cursos_disponibles = ["---"]
+                            curso = st.selectbox("Curso", cursos_disponibles, key=f"curso_{key}")
+
+                            alumnos_disponibles = df_alumnos[df_alumnos["Curso"]==curso]["Nombre"].tolist() if curso in df_alumnos["Curso"].unique() else ["---"]
+                            alumno = st.selectbox("Alumno", alumnos_disponibles, key=f"alumno_{key}")
+
+                            profesor = st.selectbox("Profesor", lista_profesores if lista_profesores else ["---"], key=f"prof_{key}")
+
                             if st.button("Registrar entrada", key=f"entrada_{key}"):
                                 st.session_state.ocupacion[st.session_state.planta][bano].append({
                                     "alumno": alumno,
