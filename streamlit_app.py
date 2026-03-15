@@ -225,7 +225,6 @@ else:
 
                     num=len(ocupados)
 
-                    st.markdown('<div class="bano-card">',unsafe_allow_html=True)
 
                     st.subheader(f"{icono} {bano}")
 
