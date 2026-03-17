@@ -377,6 +377,7 @@ with tab_panel:
 
                         cols[3].write("")
                         cols[4].write("")
+                        cols[5].write("")
 
                         if alumno_en_bano(alumno):
                             st.warning("Este alumno ya está en otro baño")
