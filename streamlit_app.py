@@ -31,10 +31,10 @@ color:#E2E8F0;
 }
 
 .stButton>button{
-border:2px solid #38BDF8;
-border-radius:10px;
-color:#F8FAFC;
+border:none;
+border-radius:8px;
 background:#1E293B;
+color:#F8FAFC;
 font-weight:600;
 }
 
@@ -399,6 +399,18 @@ with tab_hist:
 
     st.subheader("Histórico de visitas")
 
+    if st.button("💾 Guardar histórico en CSV"):
+
+    conn = init_db()
+
+    df_export = pd.read_sql_query("SELECT * FROM visitas", conn)
+
+    conn.close()
+
+    subir_a_github(df_export)
+
+    st.success("Histórico guardado en GitHub")
+    
     conn = init_db()
 
     df = pd.read_sql_query("""
