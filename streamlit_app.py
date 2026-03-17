@@ -330,7 +330,7 @@ with tab_panel:
 
                         cols[0].write("🟢")
 
-                        curso = st.selectbox(
+                        curso = cols[1].selectbox(
                             "Curso",
                             sorted(df_alumnos["Curso"].unique()),
                             key=f"curso_{key}"
