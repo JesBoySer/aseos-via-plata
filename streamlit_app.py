@@ -80,6 +80,11 @@ transform:scale(0.75);
     justify-content: center;
 }
 
+/* Alinear botones con selectboxes sin label */
+div[data-testid="column"] > div > div > div > div > .stButton {
+    margin-top: 28px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
