@@ -16,19 +16,11 @@ st.set_page_config(
 
 st_autorefresh(interval=30000, key="refresh")
 
-# -------------------------
-# CONFIGURACIÓN
-# -------------------------
-
 MAX_MINUTOS = 10
 
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
 REPO = st.secrets["GITHUB_REPO"]
 FILE_PATH = st.secrets["GITHUB_FILE"]
-
-# -------------------------
-# ESTILOS
-# -------------------------
 
 st.markdown("""
 <style>
@@ -51,13 +43,6 @@ background:#2563EB;
 color:white;
 }
 
-.bloque-bano{
-border:2px solid #38BDF8;
-border-radius:8px;
-padding:8px;
-margin-bottom:12px;
-}
-
 .cabecera-bano{
 border-bottom:1px solid #38BDF8;
 padding:4px;
@@ -69,12 +54,13 @@ color:#ef4444;
 font-weight:bold;
 }
 
+.ok-verde{
+color:#22c55e;
+font-weight:bold;
+}
+
 </style>
 """, unsafe_allow_html=True)
-
-# -------------------------
-# BASE DE DATOS
-# -------------------------
 
 def init_db():
 
@@ -102,10 +88,6 @@ def init_db():
 
     return conn
 
-
-# -------------------------
-# SINCRONIZACIÓN GITHUB
-# -------------------------
 
 def subir_a_github(df_nuevo):
 
@@ -145,10 +127,6 @@ def subir_a_github(df_nuevo):
     requests.put(url, headers=headers, json=data)
 
 
-# -------------------------
-# CARGA DATOS
-# -------------------------
-
 @st.cache_data
 def cargar_datos():
 
@@ -161,10 +139,6 @@ def cargar_datos():
 df_alumnos, df_profesores = cargar_datos()
 
 lista_profesores = df_profesores["Nombre"].tolist()
-
-# -------------------------
-# SESSION STATE
-# -------------------------
 
 if "planta" not in st.session_state:
     st.session_state.planta = None
@@ -191,10 +165,6 @@ if "ocupacion" not in st.session_state:
 if "editar" not in st.session_state:
     st.session_state.editar = {}
 
-# -------------------------
-# SIDEBAR
-# -------------------------
-
 with st.sidebar:
 
     st.title("🚾 SCA")
@@ -207,10 +177,6 @@ with st.sidebar:
 
             st.session_state.planta = None
             st.rerun()
-
-# -------------------------
-# SELECCIÓN PLANTA
-# -------------------------
 
 if st.session_state.planta is None:
 
@@ -230,10 +196,6 @@ if st.session_state.planta is None:
 
     st.stop()
 
-# -------------------------
-# FUNCIONES AUXILIARES
-# -------------------------
-
 def alumno_en_bano(nombre):
 
     for planta in st.session_state.ocupacion.values():
@@ -248,21 +210,12 @@ def alumno_en_bano(nombre):
 
     return False
 
-
-# -------------------------
-# PESTAÑAS
-# -------------------------
-
 tab_panel, tab_hist = st.tabs(["Panel", "Histórico"])
 
 zonas = {
     "NORTE": ["Chicos Norte", "Chicas Norte"],
     "SUR": ["Chicos Sur", "Chicas Sur"]
 }
-
-# -------------------------
-# PANEL
-# -------------------------
 
 with tab_panel:
 
@@ -280,24 +233,23 @@ with tab_panel:
 
                 icono = "🚹" if "Chicos" in bano else "🚺"
 
-                st.markdown('<div class="bloque-bano">', unsafe_allow_html=True)
-
                 st.markdown(f"### {icono} {bano}")
 
-                cab = st.columns([1,3,2,2,1,1])
+                cab = st.columns([1,2,3,3,1,1,1])
 
                 cab[0].markdown('<div class="cabecera-bano">Estado</div>', unsafe_allow_html=True)
-                cab[1].markdown('<div class="cabecera-bano">Alumno</div>', unsafe_allow_html=True)
-                cab[2].markdown('<div class="cabecera-bano">Curso</div>', unsafe_allow_html=True)
-                cab[3].markdown('<div class="cabecera-bano">Min</div>', unsafe_allow_html=True)
-                cab[4].markdown('<div class="cabecera-bano">OK</div>', unsafe_allow_html=True)
-                cab[5].markdown('<div class="cabecera-bano">Salida</div>', unsafe_allow_html=True)
+                cab[1].markdown('<div class="cabecera-bano">Curso</div>', unsafe_allow_html=True)
+                cab[2].markdown('<div class="cabecera-bano">Alumno</div>', unsafe_allow_html=True)
+                cab[3].markdown('<div class="cabecera-bano">Profesor</div>', unsafe_allow_html=True)
+                cab[4].markdown('<div class="cabecera-bano">Min</div>', unsafe_allow_html=True)
+                cab[5].markdown('<div class="cabecera-bano">OK</div>', unsafe_allow_html=True)
+                cab[6].markdown('<div class="cabecera-bano">➡</div>', unsafe_allow_html=True)
 
                 ocupados = st.session_state.ocupacion[st.session_state.planta][bano]
 
                 for fila in range(2):
 
-                    cols = st.columns([1,3,2,2,1,1])
+                    cols = st.columns([1,2,3,3,1,1,1])
 
                     key = f"{bano}_{fila}_{st.session_state.planta}"
 
@@ -314,31 +266,24 @@ with tab_panel:
                             month=ahora.month,
                             day=ahora.day)).total_seconds()/60)
 
-                        cols[0].button("🔴", key=f"estado_{key}")
-
-                        cols[1].write(p["alumno"])
-
-                        cols[2].write(p["curso"])
+                        cols[0].write("🔴")
+                        cols[1].write(p["curso"])
+                        cols[2].write(p["alumno"])
+                        cols[3].write(p["profesor"])
 
                         if minutos > MAX_MINUTOS:
-
-                            cols[3].markdown(
+                            cols[4].markdown(
                                 f'<span class="minutos-alerta">{minutos}</span>',
                                 unsafe_allow_html=True)
-
                         else:
+                            cols[4].write(minutos)
 
-                            cols[3].write(minutos)
+                        cols[5].markdown('<span class="ok-verde">✔</span>', unsafe_allow_html=True)
 
-                        ok = cols[4].checkbox("", True, key=f"ok_{key}")
-
+                        ok = True
                         obs = ""
 
-                        if not ok:
-
-                            obs = st.text_area("Observaciones", key=f"obs_{key}")
-
-                        if cols[5].button("Salida", key=f"fin_{key}"):
+                        if cols[6].button("➡", key=f"fin_{key}"):
 
                             conn = init_db()
 
@@ -355,7 +300,7 @@ with tab_panel:
                                 p["profesor"],
                                 p["h_entrada"],
                                 datetime.now().strftime("%H:%M"),
-                                "OK" if ok else "Problema",
+                                "OK",
                                 obs
                             ))
 
@@ -365,12 +310,12 @@ with tab_panel:
 
                                 "planta":st.session_state.planta,
                                 "bano":bano,
-                                "alumno":p["alumno"],
                                 "curso":p["curso"],
+                                "alumno":p["alumno"],
                                 "profesor":p["profesor"],
                                 "h_entrada":p["h_entrada"],
                                 "h_salida":datetime.now().strftime("%H:%M"),
-                                "estado":"OK" if ok else "Problema",
+                                "estado":"OK",
                                 "observaciones":obs
 
                             }])
@@ -383,62 +328,51 @@ with tab_panel:
 
                     else:
 
-                        if key not in st.session_state.editar:
-                            st.session_state.editar[key] = False
+                        cols[0].write("🟢")
 
-                        if cols[0].button("🟢", key=f"libre_{key}"):
+                        curso = st.selectbox(
+                            "Curso",
+                            sorted(df_alumnos["Curso"].unique()),
+                            key=f"curso_{key}"
+                        )
 
-                            st.session_state.editar[key] = not st.session_state.editar[key]
+                        alumnos_disp = df_alumnos[
+                            df_alumnos["Curso"]==curso
+                        ]["Nombre"].tolist()
 
-                        if st.session_state.editar[key]:
+                        alumno = cols[2].selectbox(
+                            "Alumno",
+                            alumnos_disp,
+                            key=f"alumno_{key}"
+                        )
 
-                            curso = st.selectbox(
-                                "Curso",
-                                sorted(df_alumnos["Curso"].unique()),
-                                key=f"curso_{key}"
-                            )
+                        profesor = cols[3].selectbox(
+                            "Profesor",
+                            lista_profesores,
+                            key=f"prof_{key}"
+                        )
 
-                            alumnos_disp = df_alumnos[
-                                df_alumnos["Curso"]==curso
-                            ]["Nombre"].tolist()
+                        cols[4].write("")
+                        cols[5].write("")
 
-                            alumno = st.selectbox(
-                                "Alumno",
-                                alumnos_disp,
-                                key=f"alumno_{key}"
-                            )
+                        if alumno_en_bano(alumno):
 
-                            profesor = st.selectbox(
-                                "Profesor",
-                                lista_profesores,
-                                key=f"prof_{key}"
-                            )
+                            st.warning("Este alumno ya está en otro baño")
 
-                            if alumno_en_bano(alumno):
+                        elif cols[6].button("🟢", key=f"entrada_{key}"):
 
-                                st.warning("Este alumno ya está en otro baño")
+                            st.session_state.ocupacion[
+                                st.session_state.planta][bano].append({
 
-                            elif st.button("Registrar entrada", key=f"entrada_{key}"):
+                                "alumno": alumno,
+                                "curso": curso,
+                                "profesor": profesor,
+                                "h_entrada": datetime.now().strftime("%H:%M")
 
-                                st.session_state.ocupacion[
-                                    st.session_state.planta][bano].append({
+                            })
 
-                                    "alumno": alumno,
-                                    "curso": curso,
-                                    "profesor": profesor,
-                                    "h_entrada": datetime.now().strftime("%H:%M")
+                            st.rerun()
 
-                                })
-
-                                st.session_state.editar[key] = False
-
-                                st.rerun()
-
-                st.markdown("</div>", unsafe_allow_html=True)
-
-# -------------------------
-# HISTÓRICO
-# -------------------------
 
 with tab_hist:
 
@@ -446,25 +380,15 @@ with tab_hist:
 
     conn = init_db()
 
-    df = pd.read_sql_query("SELECT * FROM visitas ORDER BY id DESC", conn)
+    df = pd.read_sql_query("""
+        SELECT id, planta, bano, curso, alumno, profesor,
+        h_entrada, h_salida,
+        (strftime('%s',h_salida)-strftime('%s',h_entrada))/60 as minutos,
+        estado, observaciones
+        FROM visitas
+        ORDER BY id DESC
+    """, conn)
 
     conn.close()
-
-    cursos = ["Todos"] + sorted(df["curso"].dropna().unique().tolist())
-    profesores = ["Todos"] + sorted(df["profesor"].dropna().unique().tolist())
-
-    c1, c2 = st.columns(2)
-
-    f_curso = c1.selectbox("Filtrar por curso", cursos)
-
-    f_prof = c2.selectbox("Filtrar por profesor", profesores)
-
-    if f_curso != "Todos":
-
-        df = df[df["curso"] == f_curso]
-
-    if f_prof != "Todos":
-
-        df = df[df["profesor"] == f_prof]
 
     st.dataframe(df, use_container_width=True)
