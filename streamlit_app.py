@@ -398,19 +398,7 @@ with tab_panel:
 with tab_hist:
 
     st.subheader("Histórico de visitas")
-
-    if st.button("💾 Guardar histórico en CSV"):
-
-    conn = init_db()
-
-    df_export = pd.read_sql_query("SELECT * FROM visitas", conn)
-
-    conn.close()
-
-    subir_a_github(df_export)
-
-    st.success("Histórico guardado en GitHub")
-    
+  
     conn = init_db()
 
     df = pd.read_sql_query("""
