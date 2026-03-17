@@ -64,6 +64,22 @@ font-weight:bold;
 transform:scale(0.75);
 }
 
+/* Centrar contenido de columnas */
+[data-testid="column"] {
+    text-align: center;
+}
+
+/* centrar selectbox */
+.stSelectbox div[data-baseweb="select"] {
+    text-align: center;
+}
+
+/* centrar checkbox */
+.stCheckbox {
+    display: flex;
+    justify-content: center;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
