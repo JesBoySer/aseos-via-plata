@@ -59,6 +59,11 @@ color:#22c55e;
 font-weight:bold;
 }
 
+/* CHECKBOX MÁS PEQUEÑOS */
+.stCheckbox > label > div{
+transform:scale(0.75);
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -235,21 +240,20 @@ with tab_panel:
 
                 st.markdown(f"### {icono} {bano}")
 
-                cab = st.columns([1,2,3,3,1,1,1])
+                cab = st.columns([2,3,3,1,1,1])
 
-                cab[0].markdown('<div class="cabecera-bano">Estado</div>', unsafe_allow_html=True)
-                cab[1].markdown('<div class="cabecera-bano">Curso</div>', unsafe_allow_html=True)
-                cab[2].markdown('<div class="cabecera-bano">Alumno</div>', unsafe_allow_html=True)
-                cab[3].markdown('<div class="cabecera-bano">Profesor</div>', unsafe_allow_html=True)
-                cab[4].markdown('<div class="cabecera-bano">Min</div>', unsafe_allow_html=True)
-                cab[5].markdown('<div class="cabecera-bano">OK</div>', unsafe_allow_html=True)
-                cab[6].markdown('<div class="cabecera-bano">➡</div>', unsafe_allow_html=True)
+                cab[0].markdown('<div class="cabecera-bano">Curso</div>', unsafe_allow_html=True)
+                cab[1].markdown('<div class="cabecera-bano">Alumno</div>', unsafe_allow_html=True)
+                cab[2].markdown('<div class="cabecera-bano">Profesor</div>', unsafe_allow_html=True)
+                cab[3].markdown('<div class="cabecera-bano">Min</div>', unsafe_allow_html=True)
+                cab[4].markdown('<div class="cabecera-bano">OK</div>', unsafe_allow_html=True)
+                cab[5].markdown('<div class="cabecera-bano">➡</div>', unsafe_allow_html=True)
 
                 ocupados = st.session_state.ocupacion[st.session_state.planta][bano]
 
                 for fila in range(2):
 
-                    cols = st.columns([1,2,3,3,1,1,1])
+                    cols = st.columns([2,3,3,1,1,1])
 
                     key = f"{bano}_{fila}_{st.session_state.planta}"
 
@@ -266,24 +270,27 @@ with tab_panel:
                             month=ahora.month,
                             day=ahora.day)).total_seconds()/60)
 
-                        cols[0].write("🔴")
-                        cols[1].write(p["curso"])
-                        cols[2].write(p["alumno"])
-                        cols[3].write(p["profesor"])
+                        cols[0].write(p["curso"])
+                        cols[1].write(p["alumno"])
+                        cols[2].write(p["profesor"])
 
                         if minutos > MAX_MINUTOS:
-                            cols[4].markdown(
+                            cols[3].markdown(
                                 f'<span class="minutos-alerta">{minutos}</span>',
                                 unsafe_allow_html=True)
                         else:
-                            cols[4].write(minutos)
+                            cols[3].write(minutos)
 
-                        cols[5].markdown('<span class="ok-verde">✔</span>', unsafe_allow_html=True)
+                        ok = cols[4].checkbox("", value=True, key=f"ok_{key}")
 
-                        ok = True
                         obs = ""
 
-                        if cols[6].button("➡", key=f"fin_{key}"):
+                        if not ok:
+                            obs = st.text_input("", key=f"obs_{key}", placeholder="Observaciones")
+
+                        if cols[5].button("➡", key=f"fin_{key}"):
+
+                            estado_final = "OK" if ok else "INCIDENCIA"
 
                             conn = init_db()
 
@@ -300,7 +307,7 @@ with tab_panel:
                                 p["profesor"],
                                 p["h_entrada"],
                                 datetime.now().strftime("%H:%M"),
-                                "OK",
+                                estado_final,
                                 obs
                             ))
 
@@ -315,7 +322,7 @@ with tab_panel:
                                 "profesor":p["profesor"],
                                 "h_entrada":p["h_entrada"],
                                 "h_salida":datetime.now().strftime("%H:%M"),
-                                "estado":"OK",
+                                "estado":estado_final,
                                 "observaciones":obs
 
                             }])
@@ -328,53 +335,48 @@ with tab_panel:
 
                     else:
 
-                        cols[0].write("🟢")
+                        cursos = ["Seleccionar"] + sorted(df_alumnos["Curso"].unique())
 
-                        curso = cols[1].selectbox(
-                            "",
-                            sorted(df_alumnos["Curso"].unique()),
-                            key=f"curso_{key}",
-                            label_visibility="collapsed"
-                        )
+                        curso = cols[0].selectbox("", cursos, key=f"curso_{key}")
 
-                        alumnos_disp = df_alumnos[
-                            df_alumnos["Curso"]==curso
-                        ]["Nombre"].tolist()
+                        alumnos_disp = []
 
-                        alumno = cols[2].selectbox(
-                            "",
-                            alumnos_disp,
-                            key=f"alumno_{key}",
-                            label_visibility="collapsed"
-                        )
+                        if curso != "Seleccionar":
+                            alumnos_disp = df_alumnos[
+                                df_alumnos["Curso"]==curso
+                            ]["Nombre"].tolist()
 
-                        profesor = cols[3].selectbox(
-                            "",
-                            lista_profesores,
-                            key=f"prof_{key}",
-                            label_visibility="collapsed"
-                        )
+                        alumnos_disp = ["Seleccionar"] + alumnos_disp
 
+                        alumno = cols[1].selectbox("", alumnos_disp, key=f"alumno_{key}")
+
+                        profesores = ["Seleccionar"] + lista_profesores
+
+                        profesor = cols[2].selectbox("", profesores, key=f"prof_{key}")
+
+                        cols[3].write("")
                         cols[4].write("")
-                        cols[5].write("")
 
                         if alumno_en_bano(alumno):
-
                             st.warning("Este alumno ya está en otro baño")
 
-                        elif cols[6].button("🟢", key=f"entrada_{key}"):
+                        elif cols[5].button("🟢", key=f"entrada_{key}"):
 
-                            st.session_state.ocupacion[
-                                st.session_state.planta][bano].append({
+                            if curso=="Seleccionar" or alumno=="Seleccionar" or profesor=="Seleccionar":
+                                st.warning("Debes seleccionar curso, alumno y profesor")
+                            else:
 
-                                "alumno": alumno,
-                                "curso": curso,
-                                "profesor": profesor,
-                                "h_entrada": datetime.now().strftime("%H:%M")
+                                st.session_state.ocupacion[
+                                    st.session_state.planta][bano].append({
 
-                            })
+                                    "alumno": alumno,
+                                    "curso": curso,
+                                    "profesor": profesor,
+                                    "h_entrada": datetime.now().strftime("%H:%M")
 
-                            st.rerun()
+                                })
+
+                                st.rerun()
 
 
 with tab_hist:
