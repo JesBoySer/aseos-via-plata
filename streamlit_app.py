@@ -331,9 +331,10 @@ with tab_panel:
                         cols[0].write("🟢")
 
                         curso = cols[1].selectbox(
-                            "Curso",
+                            "",
                             sorted(df_alumnos["Curso"].unique()),
-                            key=f"curso_{key}"
+                            key=f"curso_{key}",
+                            label_visibility="collapsed"
                         )
 
                         alumnos_disp = df_alumnos[
@@ -341,15 +342,17 @@ with tab_panel:
                         ]["Nombre"].tolist()
 
                         alumno = cols[2].selectbox(
-                            "Alumno",
+                            "",
                             alumnos_disp,
-                            key=f"alumno_{key}"
+                            key=f"alumno_{key}",
+                            label_visibility="collapsed"
                         )
 
                         profesor = cols[3].selectbox(
-                            "Profesor",
+                            "",
                             lista_profesores,
-                            key=f"prof_{key}"
+                            key=f"prof_{key}",
+                            label_visibility="collapsed"
                         )
 
                         cols[4].write("")
