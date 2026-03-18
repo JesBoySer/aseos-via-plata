@@ -159,6 +159,55 @@ div[data-testid="column"] > div > div > div > div > .stButton {
     margin-top: 28px;
 }
 
+/* === PASTILLAS DE ZONA (NORTE / SUR) === */
+.zona-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;              /* píldora redonda */
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin: 10px 0 6px 0;
+  border: 1px solid rgba(148, 163, 184, 0.35); /* slate-400 con transparencia */
+  backdrop-filter: blur(2px);
+  user-select: none;
+}
+
+/* Variante general sobre fondo oscuro */
+.zona-pill {
+  color: #E5E7EB;                      /* texto gris muy claro */
+  background: rgba(30, 41, 59, 0.45);  /* slate-800 translúcido */
+}
+
+/* NORTE: acento cian/teal */
+.zona-norte {
+  border-color: rgba(56, 189, 248, 0.6);      /* cian */
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.25);
+}
+.zona-norte .punto {
+  width: 8px; height: 8px; border-radius: 9999px;
+  background: #22D3EE;                       /* cian brillante */
+}
+
+/* SUR: acento violeta */
+.zona-sur {
+  border-color: rgba(167, 139, 250, 0.6);     /* violeta */
+  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.25);
+}
+.zona-sur .punto {
+  width: 8px; height: 8px; border-radius: 9999px;
+  background: #A78BFA;                       /* violeta brillante */
+}
+
+/* Contenedor para centrar en la columna */
+.zona-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -321,7 +370,19 @@ with tab_panel:
 
     for zona, banos in zonas.items():
 
-        st.subheader(zona)
+        # Pastilla NORTE / SUR con estilo
+        css_variante = "norte" if zona.upper() == "NORTE" else "sur"
+        st.markdown(
+            f'''
+            <div class="zona-wrap">
+                <div class="zona-pill zona-{css_variante}">
+                    <span class="punto"></span>
+                    <span>{zona}</span>
+                </div>
+            </div>
+            ''',
+            unsafe_allow_html=True
+        )
 
         col1, col2 = st.columns(2)
 
