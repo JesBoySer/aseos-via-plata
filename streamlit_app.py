@@ -34,242 +34,172 @@ FILE_PATH = st.secrets["GITHUB_FILE"]
 st.markdown("""
 <style>
 
+/* ------------------ BASE ------------------ */
 .stApp{
-background:#0B1120;
-color:#E2E8F0;
+    background:#0B1120;
+    color:#E2E8F0;
 }
 
-/* === SELECTBOX / MULTISELECT: fondo negro y texto blanco === */
+/* ------------------ SELECTBOX / MULTISELECT ------------------ */
 
-/* Caja del control (cerrado) */
+/* Caja principal */
 .stSelectbox div[data-baseweb="select"] > div,
 .stMultiSelect div[data-baseweb="select"] > div {
-  background: #000000 !important;     /* negro */
-  color: #ffffff !important;           /* texto blanco */
-  border-color: #334155 !important;    /* slate-700 */
-  border-radius: 8px !important;
+    background: #000000 !important;
+    color: #ffffff !important;
+    border-color: #334155 !important;
+    border-radius: 8px !important;
 }
 
-/* Texto del input y placeholder */
+/* Texto */
 .stSelectbox div[data-baseweb="select"] input,
-.stMultiSelect div[data-baseweb="select"] input,
-.stSelectbox div[data-baseweb="select"] div[aria-hidden="true"],
-.stMultiSelect div[data-baseweb="select"] div[aria-hidden="true"] {
-  color: #ffffff !important;           /* texto blanco */
+.stMultiSelect div[data-baseweb="select"] input {
+    color: #ffffff !important;
 }
 
-/* Color algo más tenue para el placeholder (si aplica) */
-.stSelectbox div[data-baseweb="select"] div[aria-hidden="true"],
-.stMultiSelect div[data-baseweb="select"] div[aria-hidden="true"] {
-  opacity: 0.7 !important;             /* simula placeholder */
-}
-
-/* Icono "chevron" (flecha) */
+/* Icono */
 .stSelectbox svg, 
 .stMultiSelect svg {
-  fill: #ffffff !important;
-  color: #ffffff !important;
+    fill: #ffffff !important;
 }
 
 /* Menú desplegable */
-.stSelectbox div[data-baseweb="select"] div[role="listbox"],
-.stMultiSelect div[data-baseweb="select"] div[role="listbox"] {
-  background: #0a0a0a !important;      /* negro casi puro */
-  color: #ffffff !important;
-  border: 1px solid #334155 !important;
+.stSelectbox div[role="listbox"],
+.stMultiSelect div[role="listbox"] {
+    background: #0a0a0a !important;
+    color: #ffffff !important;
 }
 
-/* Opción del menú (estado normal) */
+/* Opciones */
 .stSelectbox div[role="option"],
 .stMultiSelect div[role="option"] {
-  background: #0a0a0a !important;
-  color: #ffffff !important;
+    background: #0a0a0a !important;
+    color: #ffffff !important;
 }
 
-/* Opción con hover */
 .stSelectbox div[role="option"]:hover,
 .stMultiSelect div[role="option"]:hover {
-  background: #1f2937 !important;      /* gris oscuro (tailwind slate-800) */
+    background: #1f2937 !important;
 }
 
-/* Opción seleccionada/activa */
+/* Seleccionado */
 .stSelectbox div[aria-selected="true"],
 .stMultiSelect div[aria-selected="true"] {
-  background: #111827 !important;      /* slate-900 */
-  color: #ffffff !important;
+    background: #111827 !important;
 }
 
-/* Borde/halo de foco para accesibilidad */
-.stSelectbox div[data-baseweb="select"] > div:focus-within,
-.stMultiSelect div[data-baseweb="select"] > div:focus-within {
-  outline: 2px solid #2563EB !important;  /* azul */
-  outline-offset: 1px !important;
+/* IMPORTANTE: centrado seguro (sin romper el componente) */
+.stSelectbox {
+    text-align: center;
 }
 
-/* Alineado centrado (ya lo tenías, lo refuerzo) */
-.stSelectbox div[data-baseweb="select"],
-.stMultiSelect div[data-baseweb="select"] {
-  text-align: center;
-}
-
-
+/* ------------------ BOTONES ------------------ */
 .stButton>button{
-border:none;
-border-radius:8px;
-background:#1E293B;
-color:#F8FAFC;
-font-weight:600;
+    border:none;
+    border-radius:8px;
+    background:#1E293B;
+    color:#F8FAFC;
+    font-weight:600;
 }
 
 .stButton>button:hover{
-background:#2563EB;
-color:white;
+    background:#2563EB;
+    color:white;
 }
 
-.cabecera-bano{
-border-bottom:1px solid #38BDF8;
-padding:4px;
-font-weight:bold;
-}
-
-.minutos-alerta{
-color:#ef4444;
-font-weight:bold;
-}
-
-.ok-verde{
-color:#22c55e;
-font-weight:bold;
-}
-
-/* CHECKBOX MÁS PEQUEÑOS */
-.stCheckbox > label > div{
-transform:scale(0.75);
-}
-
-/* Centrar contenido de columnas */
-[data-testid="column"] {
-    text-align: center;
-}
-
-/* centrar selectbox */
-.stSelectbox div[data-baseweb="select"] {
-    text-align: center;
-}
-
-/* centrar checkbox */
-.stCheckbox {
-    display: flex;
-    justify-content: center;
-}
-
-/* Alinear botones con selectboxes sin label */
-div[data-testid="column"] > div > div > div > div > .stButton {
-    margin-top: 28px;
-}
-
-/* === PASTILLAS DE ZONA (NORTE / SUR) === */
-.zona-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 9999px;              /* píldora redonda */
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  margin: 10px 0 6px 0;
-  border: 1px solid rgba(148, 163, 184, 0.35); /* slate-400 con transparencia */
-  backdrop-filter: blur(2px);
-  user-select: none;
-}
-
-/* Variante general sobre fondo oscuro */
-.zona-pill {
-  color: #E5E7EB;                      /* texto gris muy claro */
-  background: rgba(30, 41, 59, 0.45);  /* slate-800 translúcido */
-}
-
-/* NORTE: acento cian/teal */
-.zona-norte {
-  border-color: rgba(56, 189, 248, 0.6);      /* cian */
-  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.25);
-}
-.zona-norte .punto {
-  width: 8px; height: 8px; border-radius: 9999px;
-  background: #22D3EE;                       /* cian brillante */
-}
-
-/* SUR: acento violeta */
-.zona-sur {
-  border-color: rgba(167, 139, 250, 0.6);     /* violeta */
-  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.25);
-}
-.zona-sur .punto {
-  width: 8px; height: 8px; border-radius: 9999px;
-  background: #A78BFA;                       /* violeta brillante */
-}
-
-/* Contenedor para centrar en la columna */
-.zona-wrap {
-  display: flex;
-  justify-content: center;
-  margin-top: 6px;
-  margin-bottom: 4px;
-}
-
-/* Botón verde minimalista, sin borde */
-.boton-verde-min > button {
-    border: none !important;
-    background: none !important;
-    padding: 0 !important;
-    font-size: 26px !important; /* tamaño del icono */
-    cursor: pointer;
-    color: #22c55e !important; /* verde */
-}
-
-.boton-verde-min > button:hover {
-    transform: scale(1.1);
-}
-
-
-/* Contenedor que alinea el botón verde con los selectores */
+/* Botón verde minimalista */
 .btn-alta-wrap {
-    margin-top: 28px;       /* Ajusta verticalmente el botón */
+    margin-top: 28px;
     display: flex;
     justify-content: center;
 }
 
-/* Botón verde minimalista sin borde */
 .btn-alta-wrap > button {
     border: none !important;
     background: none !important;
     padding: 0 !important;
     font-size: 26px !important;
     cursor: pointer;
-    color: #22c55e !important; /* verde */
+    color: #22c55e !important;
 }
 
 .btn-alta-wrap > button:hover {
     transform: scale(1.1);
 }
 
-.boton-verde {
-    margin-top: 28px;           /* Ajuste vertical PERFECTO */
+/* ------------------ TABLA / TEXTO ------------------ */
+.cabecera-bano{
+    border-bottom:1px solid #38BDF8;
+    padding:4px;
+    font-weight:bold;
+}
+
+.minutos-alerta{
+    color:#ef4444;
+    font-weight:bold;
+}
+
+.ok-verde{
+    color:#22c55e;
+    font-weight:bold;
+}
+
+/* ------------------ CHECKBOX ------------------ */
+.stCheckbox > label > div{
+    transform:scale(0.75);
+}
+
+/* ------------------ COLUMNAS ------------------ */
+[data-testid="column"] {
+    text-align: center;
+}
+
+/* Alinear botón con selects */
+div[data-testid="column"] > div > div > div > div > .stButton {
+    margin-top: 28px;
+}
+
+/* ------------------ ZONAS ------------------ */
+.zona-wrap {
     display: flex;
     justify-content: center;
+    margin-top: 6px;
+    margin-bottom: 4px;
 }
 
-.boton-verde button {
-    background: none !important;
-    border: none !important;
-    font-size: 26px !important;
-    color: #22c55e !important;
-    padding: 0 !important;
-    cursor: pointer !important;
+.zona-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-weight: 700;
+    margin: 10px 0 6px 0;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    color: #E5E7EB;
+    background: rgba(30, 41, 59, 0.45);
 }
 
-.boton-verde button:hover {
-    transform: scale(1.15);
+/* NORTE */
+.zona-norte {
+    border-color: rgba(56, 189, 248, 0.6);
+}
+.zona-norte .punto {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: #22D3EE;
+}
+
+/* SUR */
+.zona-sur {
+    border-color: rgba(167, 139, 250, 0.6);
+}
+.zona-sur .punto {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: #A78BFA;
 }
 
 </style>
