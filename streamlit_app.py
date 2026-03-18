@@ -231,6 +231,29 @@ div[data-testid="column"] > div > div > div > div > .stButton {
     transform: scale(1.1);
 }
 
+
+/* Contenedor que alinea el botón verde con los selectores */
+.btn-alta-wrap {
+    margin-top: 28px;       /* Ajusta verticalmente el botón */
+    display: flex;
+    justify-content: center;
+}
+
+/* Botón verde minimalista sin borde */
+.btn-alta-wrap > button {
+    border: none !important;
+    background: none !important;
+    padding: 0 !important;
+    font-size: 26px !important;
+    cursor: pointer;
+    color: #22c55e !important; /* verde */
+}
+
+.btn-alta-wrap > button:hover {
+    transform: scale(1.1);
+}
+
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -586,7 +609,7 @@ with tab_panel:
 							st.warning("Este alumno ya está en otro baño")
 						else:
 							with cols[5]:
-								st.markdown('<div class="boton-verde-min">', unsafe_allow_html=True)
+								st.markdown('<div class="btn-alta-wrap">', unsafe_allow_html=True)
 								if st.button("🟢", key=make_key("entrada", key_base)):
 									if curso=="Seleccionar" or alumno=="Seleccionar" or profesor=="Seleccionar":
 										st.warning("Debes seleccionar curso, alumno y profesor")
