@@ -30,6 +30,80 @@ background:#0B1120;
 color:#E2E8F0;
 }
 
+/* === SELECTBOX / MULTISELECT: fondo negro y texto blanco === */
+
+/* Caja del control (cerrado) */
+.stSelectbox div[data-baseweb="select"] > div,
+.stMultiSelect div[data-baseweb="select"] > div {
+  background: #000000 !important;     /* negro */
+  color: #ffffff !important;           /* texto blanco */
+  border-color: #334155 !important;    /* slate-700 */
+  border-radius: 8px !important;
+}
+
+/* Texto del input y placeholder */
+.stSelectbox div[data-baseweb="select"] input,
+.stMultiSelect div[data-baseweb="select"] input,
+.stSelectbox div[data-baseweb="select"] div[aria-hidden="true"],
+.stMultiSelect div[data-baseweb="select"] div[aria-hidden="true"] {
+  color: #ffffff !important;           /* texto blanco */
+}
+
+/* Color algo más tenue para el placeholder (si aplica) */
+.stSelectbox div[data-baseweb="select"] div[aria-hidden="true"],
+.stMultiSelect div[data-baseweb="select"] div[aria-hidden="true"] {
+  opacity: 0.7 !important;             /* simula placeholder */
+}
+
+/* Icono "chevron" (flecha) */
+.stSelectbox svg, 
+.stMultiSelect svg {
+  fill: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* Menú desplegable */
+.stSelectbox div[data-baseweb="select"] div[role="listbox"],
+.stMultiSelect div[data-baseweb="select"] div[role="listbox"] {
+  background: #0a0a0a !important;      /* negro casi puro */
+  color: #ffffff !important;
+  border: 1px solid #334155 !important;
+}
+
+/* Opción del menú (estado normal) */
+.stSelectbox div[role="option"],
+.stMultiSelect div[role="option"] {
+  background: #0a0a0a !important;
+  color: #ffffff !important;
+}
+
+/* Opción con hover */
+.stSelectbox div[role="option"]:hover,
+.stMultiSelect div[role="option"]:hover {
+  background: #1f2937 !important;      /* gris oscuro (tailwind slate-800) */
+}
+
+/* Opción seleccionada/activa */
+.stSelectbox div[aria-selected="true"],
+.stMultiSelect div[aria-selected="true"] {
+  background: #111827 !important;      /* slate-900 */
+  color: #ffffff !important;
+}
+
+/* Borde/halo de foco para accesibilidad */
+.stSelectbox div[data-baseweb="select"] > div:focus-within,
+.stMultiSelect div[data-baseweb="select"] > div:focus-within {
+  outline: 2px solid #2563EB !important;  /* azul */
+  outline-offset: 1px !important;
+}
+
+/* Alineado centrado (ya lo tenías, lo refuerzo) */
+.stSelectbox div[data-baseweb="select"],
+.stMultiSelect div[data-baseweb="select"] {
+  text-align: center;
+}
+
+
 .stButton>button{
 border:none;
 border-radius:8px;
