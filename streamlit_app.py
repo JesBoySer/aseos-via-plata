@@ -438,7 +438,7 @@ def alumno_en_bano(nombre):
 tab_panel, tab_hist = st.tabs(["Panel", "Histórico"])
 
 zonas = {
-    "NORTE": ["Chicos Norte", "Chicas Norte"],
+    "NORTEDELTODO": ["Chicos Norte", "Chicas Norte"],
     "SUR": ["Chicos Sur", "Chicas Sur"]
 }
 
