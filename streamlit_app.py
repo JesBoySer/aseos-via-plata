@@ -616,33 +616,25 @@ with tab_panel:
                         alumnos_disp = ["Seleccionar"] + alumnos_disp
                         alumno = cols[1].selectbox("", alumnos_disp, key=make_key("alumno", key_base))
 
-                        profesores = ["Seleccionar"] + lista_profesores
-                        profesor = cols[2].selectbox("", profesores, key=make_key("prof", key_base))
-
-                        cols[3].write("")
-                        cols[4].write("")
-                        cols[5].write("")
-
-						if alumno_en_bano(alumno):
-							st.warning("Este alumno ya está en otro baño")
-						else:
-							with cols[5]:
-								st.markdown('<div class="boton-verde">', unsafe_allow_html=True)
-								clicked = st.button("🟢", key=make_key("entrada", key_base))
-								st.markdown('</div>', unsafe_allow_html=True)
-						
-								if clicked:
-									if curso=="Seleccionar" or alumno=="Seleccionar" or profesor=="Seleccionar":
-										st.warning("Debes seleccionar curso, alumno y profesor")
-									else:
-										st.session_state.ocupacion[st.session_state.planta][bano].append({
-											"alumno": alumno,
-											"curso": curso,
-											"profesor": profesor,
-											"h_entrada": datetime.now().strftime("%H:%M")
-										})
-										st.rerun()
-
+                        if alumno_en_bano(alumno):
+                            st.warning("Este alumno ya está en otro baño")
+                        else:
+                            with cols[5]:
+                                st.markdown('<div class="btn-alta-wrap">', unsafe_allow_html=True)
+                                clicked = st.button("🟢", key=make_key("entrada", key_base))
+                                st.markdown('</div>', unsafe_allow_html=True)
+                        
+                                if clicked:
+                                    if curso == "Seleccionar" or alumno == "Seleccionar" or profesor == "Seleccionar":
+                                        st.warning("Debes seleccionar curso, alumno y profesor")
+                                    else:
+                                        st.session_state.ocupacion[st.session_state.planta][bano].append({
+                                            "alumno": alumno,
+                                            "curso": curso,
+                                            "profesor": profesor,
+                                            "h_entrada": datetime.now().strftime("%H:%M")
+                                        })
+                                        st.rerun()
 # ----------------------------
 # HISTÓRICO (DE LA PLANTA ACTUAL)
 # ----------------------------
