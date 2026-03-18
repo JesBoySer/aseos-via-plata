@@ -7,7 +7,7 @@ from datetime import datetime
 import requests
 import base64
 from io import StringIO
-# from streamlit_autorefresh import st_autorefresh  # -> lo desactivamos para evitar problemas
+# from streamlit_autorefresh import st_autorefresh  # desactivado para evitar rerun
 
 # ----------------------------
 # CONFIGURACIÓN BÁSICA
@@ -18,204 +18,104 @@ st.set_page_config(
     page_icon="🚾"
 )
 
-# Desactivado para evitar reruns constantes que podían provocar estados inconsistentes entre instancias
-# st_autorefresh(interval=30000, key="refresh")
+# st_autorefresh(interval=120000, key="refresh")  # si quieres refresco suave (120 s)
 
 MAX_MINUTOS = 10
 
-# Secrets de GitHub (deben estar configurados)
-GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
-REPO = st.secrets["GITHUB_REPO"]
-FILE_PATH = st.secrets["GITHUB_FILE"]
+# Secrets de GitHub (si usas cierre diario / histórico)
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
+REPO = st.secrets.get("GITHUB_REPO", "")
+FILE_PATH = st.secrets.get("GITHUB_FILE", "")
 
 # ----------------------------
-# ESTILOS
+# ESTILOS (MODO OSCURO + SELECT + PILLS + BOTÓN 🟢)
 # ----------------------------
 st.markdown("""
 <style>
 
-.stApp{
-background:#0B1120;
-color:#E2E8F0;
+/* --- Base oscura --- */
+.stApp{ background:#0B1120; color:#E2E8F0; }
+
+/* Botón genérico */
+.stButton>button{
+  border:none; border-radius:8px;
+  background:#1E293B; color:#F8FAFC; font-weight:600;
 }
+.stButton>button:hover{ background:#2563EB; color:#fff; }
 
-/* === SELECTBOX / MULTISELECT: fondo negro y texto blanco === */
+/* Cabeceras */
+.cabecera-bano{ border-bottom:1px solid #38BDF8; padding:4px; font-weight:bold; }
+.minutos-alerta{ color:#ef4444; font-weight:bold; }
+.ok-verde{ color:#22c55e; font-weight:bold; }
 
-/* Caja del control (cerrado) */
+/* Checkbox */
+.stCheckbox>label>div{ transform:scale(0.85); }
+.stCheckbox{ display:flex; justify-content:center; }
+
+/* Centrado columnas */
+[data-testid="column"]{ text-align:center; }
+
+/* --- SELECTBOX / MULTISELECT en oscuro --- */
 .stSelectbox div[data-baseweb="select"] > div,
 .stMultiSelect div[data-baseweb="select"] > div {
-  background: #000000 !important;     /* negro */
-  color: #ffffff !important;           /* texto blanco */
-  border-color: #334155 !important;    /* slate-700 */
-  border-radius: 8px !important;
+  background:#000 !important; color:#fff !important;
+  border-color:#334155 !important; border-radius:8px !important;
 }
-
-/* Texto del input y placeholder */
 .stSelectbox div[data-baseweb="select"] input,
 .stMultiSelect div[data-baseweb="select"] input,
 .stSelectbox div[data-baseweb="select"] div[aria-hidden="true"],
 .stMultiSelect div[data-baseweb="select"] div[aria-hidden="true"] {
-  color: #ffffff !important;           /* texto blanco */
+  color:#fff !important;
 }
-
-/* Color algo más tenue para el placeholder (si aplica) */
 .stSelectbox div[data-baseweb="select"] div[aria-hidden="true"],
 .stMultiSelect div[data-baseweb="select"] div[aria-hidden="true"] {
-  opacity: 0.7 !important;             /* simula placeholder */
+  opacity:0.7 !important;
 }
-
-/* Icono "chevron" (flecha) */
-.stSelectbox svg, 
-.stMultiSelect svg {
-  fill: #ffffff !important;
-  color: #ffffff !important;
-}
-
-/* Menú desplegable */
+.stSelectbox svg, .stMultiSelect svg { fill:#fff !important; color:#fff !important; }
 .stSelectbox div[data-baseweb="select"] div[role="listbox"],
 .stMultiSelect div[data-baseweb="select"] div[role="listbox"] {
-  background: #0a0a0a !important;      /* negro casi puro */
-  color: #ffffff !important;
-  border: 1px solid #334155 !important;
+  background:#0a0a0a !important; color:#fff !important;
+  border:1px solid #334155 !important;
 }
-
-/* Opción del menú (estado normal) */
-.stSelectbox div[role="option"],
-.stMultiSelect div[role="option"] {
-  background: #0a0a0a !important;
-  color: #ffffff !important;
+.stSelectbox div[role="option"], .stMultiSelect div[role="option"] {
+  background:#0a0a0a !important; color:#fff !important;
 }
-
-/* Opción con hover */
-.stSelectbox div[role="option"]:hover,
-.stMultiSelect div[role="option"]:hover {
-  background: #1f2937 !important;      /* gris oscuro (tailwind slate-800) */
+.stSelectbox div[role="option"]:hover, .stMultiSelect div[role="option"]:hover {
+  background:#1f2937 !important;
 }
-
-/* Opción seleccionada/activa */
-.stSelectbox div[aria-selected="true"],
-.stMultiSelect div[aria-selected="true"] {
-  background: #111827 !important;      /* slate-900 */
-  color: #ffffff !important;
+.stSelectbox div[aria-selected="true"], .stMultiSelect div[aria-selected="true"] {
+  background:#111827 !important; color:#fff !important;
 }
-
-/* Borde/halo de foco para accesibilidad */
+.stSelectbox div[data-baseweb="select"], .stMultiSelect div[data-baseweb="select"] { text-align:center; }
 .stSelectbox div[data-baseweb="select"] > div:focus-within,
 .stMultiSelect div[data-baseweb="select"] > div:focus-within {
-  outline: 2px solid #2563EB !important;  /* azul */
-  outline-offset: 1px !important;
+  outline:2px solid #2563EB !important; outline-offset:1px !important;
 }
 
-/* Alineado centrado (ya lo tenías, lo refuerzo) */
-.stSelectbox div[data-baseweb="select"],
-.stMultiSelect div[data-baseweb="select"] {
-  text-align: center;
-}
-
-
-.stButton>button{
-border:none;
-border-radius:8px;
-background:#1E293B;
-color:#F8FAFC;
-font-weight:600;
-}
-
-.stButton>button:hover{
-background:#2563EB;
-color:white;
-}
-
-.cabecera-bano{
-border-bottom:1px solid #38BDF8;
-padding:4px;
-font-weight:bold;
-}
-
-.minutos-alerta{
-color:#ef4444;
-font-weight:bold;
-}
-
-.ok-verde{
-color:#22c55e;
-font-weight:bold;
-}
-
-/* CHECKBOX MÁS PEQUEÑOS */
-.stCheckbox > label > div{
-transform:scale(0.75);
-}
-
-/* Centrar contenido de columnas */
-[data-testid="column"] {
-    text-align: center;
-}
-
-/* centrar selectbox */
-.stSelectbox div[data-baseweb="select"] {
-    text-align: center;
-}
-
-/* centrar checkbox */
-.stCheckbox {
-    display: flex;
-    justify-content: center;
-}
-
-/* Alinear botones con selectboxes sin label */
-div[data-testid="column"] > div > div > div > div > .stButton {
-    margin-top: 28px;
-}
-
-/* === PASTILLAS DE ZONA (NORTE / SUR) === */
+/* --- Pastillas NORTE/SUR --- */
 .zona-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 9999px;              /* píldora redonda */
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  margin: 10px 0 6px 0;
-  border: 1px solid rgba(148, 163, 184, 0.35); /* slate-400 con transparencia */
-  backdrop-filter: blur(2px);
-  user-select: none;
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 14px; border-radius:9999px; font-weight:700; letter-spacing:0.5px;
+  margin:10px 0 6px 0; user-select:none;
+  color:#E5E7EB; background:rgba(30,41,59,0.45);
+  border:1px solid rgba(148,163,184,0.35); backdrop-filter: blur(2px);
 }
+.zona-norte { border-color:rgba(56,189,248,0.6); box-shadow:inset 0 0 0 1px rgba(56,189,248,0.25); }
+.zona-norte .punto { width:8px;height:8px;border-radius:9999px;background:#22D3EE; }
+.zona-sur   { border-color:rgba(167,139,250,0.6); box-shadow:inset 0 0 0 1px rgba(167,139,250,0.25); }
+.zona-sur .punto { width:8px;height:8px;border-radius:9999px;background:#A78BFA; }
+.zona-wrap { display:flex; justify-content:center; margin-top:6px; margin-bottom:4px; }
 
-/* Variante general sobre fondo oscuro */
-.zona-pill {
-  color: #E5E7EB;                      /* texto gris muy claro */
-  background: rgba(30, 41, 59, 0.45);  /* slate-800 translúcido */
+/* --- Botón 🟢: alineado, sin borde --- */
+.btn-alta-wrap { margin-top:28px; display:flex; justify-content:center; }
+.btn-alta-wrap > button{
+  border:none !important; background:none !important; padding:0 !important;
+  font-size:26px !important; cursor:pointer !important; color:#22c55e !important;
 }
+.btn-alta-wrap > button:hover{ transform:scale(1.12); }
 
-/* NORTE: acento cian/teal */
-.zona-norte {
-  border-color: rgba(56, 189, 248, 0.6);      /* cian */
-  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.25);
-}
-.zona-norte .punto {
-  width: 8px; height: 8px; border-radius: 9999px;
-  background: #22D3EE;                       /* cian brillante */
-}
-
-/* SUR: acento violeta */
-.zona-sur {
-  border-color: rgba(167, 139, 250, 0.6);     /* violeta */
-  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.25);
-}
-.zona-sur .punto {
-  width: 8px; height: 8px; border-radius: 9999px;
-  background: #A78BFA;                       /* violeta brillante */
-}
-
-/* Contenedor para centrar en la columna */
-.zona-wrap {
-  display: flex;
-  justify-content: center;
-  margin-top: 6px;
-  margin-bottom: 4px;
-}
+/* Alinear botones con selects sin label (seguridad extra) */
+div[data-testid="column"] > div > div > div > div > .stButton { margin-top:28px; }
 
 </style>
 """, unsafe_allow_html=True)
@@ -225,11 +125,8 @@ div[data-testid="column"] > div > div > div > div > .stButton {
 # ----------------------------
 def make_key(*parts):
     """
-    Construye una clave segura para Streamlit:
-    - Une partes con '_'
-    - Sustituye cualquier carácter no alfanumérico por '_'
-    - Comprime guiones bajos repetidos
-    - Quita '_' del inicio/fin
+    Clave segura para widgets:
+    - Une con '_', sustituye no alfanumérico por '_', comprime '_' y recorta bordes.
     """
     raw = "_".join(str(p) for p in parts)
     safe = re.sub(r'[^a-zA-Z0-9_-]+', '_', raw)
@@ -237,16 +134,15 @@ def make_key(*parts):
     return safe
 
 def db_path_for(planta: str) -> str:
-    """Devuelve la ruta de BD según la planta."""
+    """Ruta de BD por planta (dos archivos locales)."""
     if not os.path.exists("data"):
         os.makedirs("data")
     return "data/primera.sqlite" if planta == "Primera" else "data/segunda.sqlite"
 
 def init_db(planta: str):
-    """Abre la BD de la planta y asegura el esquema (fecha + exportado)."""
+    """Abre la BD y asegura esquema."""
     db_file = db_path_for(planta)
     conn = sqlite3.connect(db_file, check_same_thread=False)
-
     conn.execute("""
     CREATE TABLE IF NOT EXISTS visitas(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -264,8 +160,7 @@ def init_db(planta: str):
     )
     """)
     conn.commit()
-
-    # Migraciones por si existían BDs anteriores sin las columnas
+    # Migraciones por si faltan columnas
     cols = [r[1] for r in conn.execute("PRAGMA table_info(visitas)").fetchall()]
     if "fecha" not in cols:
         conn.execute("ALTER TABLE visitas ADD COLUMN fecha TEXT")
@@ -275,38 +170,32 @@ def init_db(planta: str):
     return conn
 
 def subir_a_github(df_nuevo: pd.DataFrame):
-    """Fusiona df_nuevo con el CSV remoto en GitHub evitando duplicados."""
+    """Sube y fusiona con CSV remoto en GitHub (histórico)."""
+    if not (GITHUB_TOKEN and REPO and FILE_PATH):
+        st.warning("No hay credenciales de GitHub configuradas en secrets.")
+        return 400
+
     url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
 
-    # Lee el CSV actual si existe
     r = requests.get(url, headers=headers)
     if r.status_code == 200:
         contenido = r.json()
         sha = contenido["sha"]
         csv_actual = base64.b64decode(contenido["content"]).decode()
-        if csv_actual.strip():
-            df_actual = pd.read_csv(StringIO(csv_actual))
-        else:
-            df_actual = pd.DataFrame()
+        df_actual = pd.read_csv(StringIO(csv_actual)) if csv_actual.strip() else pd.DataFrame()
     else:
         sha = None
         df_actual = pd.DataFrame()
 
-    # Fusiona y deduplica por las columnas clave del registro
-    if df_actual is None or df_actual.empty:
-        df_total = df_nuevo.copy()
-    else:
-        df_total = pd.concat([df_actual, df_nuevo], ignore_index=True)
+    df_total = pd.concat([df_actual, df_nuevo], ignore_index=True) if not df_actual.empty else df_nuevo.copy()
 
     dedup_cols = ["fecha","planta","bano","curso","alumno","profesor","h_entrada","h_salida","estado","observaciones"]
     df_total = df_total.drop_duplicates(subset=dedup_cols)
 
-    nuevo_csv = df_total.to_csv(index=False)
-
     data = {
         "message": f"Actualizar histórico aseos - {datetime.now().isoformat(timespec='seconds')}",
-        "content": base64.b64encode(nuevo_csv.encode()).decode(),
+        "content": base64.b64encode(df_total.to_csv(index=False).encode()).decode(),
         "sha": sha
     }
     put_r = requests.put(url, headers=headers, json=data)
@@ -315,13 +204,8 @@ def subir_a_github(df_nuevo: pd.DataFrame):
     return put_r.status_code
 
 def cierre_diario(fecha_str: str):
-    """
-    Exporta a GitHub las visitas de HOY (fecha_str) de ambas plantas con exportado=0.
-    Marca como exportadas (exportado=1) para evitar duplicados.
-    """
-    total_exportadas = 0
+    """Exporta a GitHub visitas de HOY (de ambas plantas) con exportado=0 y marca como exportadas."""
     df_export = []
-
     for planta in ["Primera", "Segunda"]:
         conn = init_db(planta)
         df = pd.read_sql_query(
@@ -334,15 +218,11 @@ def cierre_diario(fecha_str: str):
             conn,
             params=(fecha_str,)
         )
-
         if not df.empty:
             df_export.append(df.copy())
-            # Marca exportado=1 para estos IDs (idempotente)
             ids = df["id"].tolist()
             conn.executemany("UPDATE visitas SET exportado=1 WHERE id=?", [(i,) for i in ids])
             conn.commit()
-            total_exportadas += len(ids)
-
         conn.close()
 
     if df_export:
@@ -394,8 +274,6 @@ if "editar" not in st.session_state:
 # ----------------------------
 with st.sidebar:
     st.title("🚾 SCA")
-
-    # Botón de cierre diario (exporta HOY ambas plantas a GitHub)
     if st.button("📤 Cierre diario (exportar a histórico)", use_container_width=True):
         hoy = datetime.now().strftime("%Y-%m-%d")
         cierre_diario(hoy)
@@ -411,7 +289,6 @@ with st.sidebar:
 # ----------------------------
 if st.session_state.planta is None:
     st.title("Sistema Control de Aseos")
-
     c1, c2 = st.columns(2)
     if c1.button("Planta Primera", use_container_width=True):
         st.session_state.planta = "Primera"
@@ -422,7 +299,7 @@ if st.session_state.planta is None:
     st.stop()
 
 # ----------------------------
-# LÓGICA AUXILIAR
+# AUXILIAR
 # ----------------------------
 def alumno_en_bano(nombre):
     for planta in st.session_state.ocupacion.values():
@@ -446,8 +323,10 @@ zonas = {
 # PANEL
 # ----------------------------
 with tab_panel:
+
     for zona, banos in zonas.items():
-        # Pastilla NORTE / SUR con estilo
+
+        # Pastilla NORTE/SUR (con estilo)
         css_variante = "norte" if zona.upper() == "NORTE" else "sur"
         st.markdown(
             f'''
@@ -466,7 +345,7 @@ with tab_panel:
         for i, bano in enumerate(banos):
             cont = col1 if i == 0 else col2
             with cont:
-                icono = "🚹❤️" if "Chicos" in bano else "🚺"
+                icono = "🚹" if "Chicos" in bano else "🚺"
                 st.markdown(f"### {icono} {bano}")
 
                 cab = st.columns([2,3,3,1,1,1])
@@ -481,13 +360,13 @@ with tab_panel:
 
                 for fila in range(2):
                     cols = st.columns([2,3,3,1,1,1])
-
-                    # Clave base segura por widget/fila
                     key_base = make_key("zona", zona, "planta", st.session_state.planta, "bano", bano, "fila", fila)
 
                     if fila < len(ocupados):
+                        # --- Fila OCUPADA ---
                         p = ocupados[fila]
 
+                        # Minutos en vivo (para la tarjeta)
                         h_ent = datetime.strptime(p["h_entrada"], "%H:%M")
                         ahora = datetime.now()
                         minutos = int((ahora - h_ent.replace(
@@ -533,53 +412,45 @@ with tab_panel:
                             ))
                             conn.commit()
 
-                            # Prepara para histórico CSV (opcional inmediato: aquí NO exportamos; lo haremos en el cierre diario)
-                            # df_nuevo = pd.DataFrame([{
-                            #     "fecha": datetime.now().strftime("%Y-%m-%d"),
-                            #     "planta": st.session_state.planta,
-                            #     "bano": bano,
-                            #     "curso": p["curso"],
-                            #     "alumno": p["alumno"],
-                            #     "profesor": p["profesor"],
-                            #     "h_entrada": p["h_entrada"],
-                            #     "h_salida": datetime.now().strftime("%H:%M"),
-                            #     "estado": estado_final,
-                            #     "observaciones": obs
-                            # }])
-                            # subir_a_github(df_nuevo)  # -> ahora lo hacemos en el cierre diario
-
                             st.session_state.ocupacion[st.session_state.planta][bano].remove(p)
                             st.rerun()
 
                     else:
+                        # --- Fila VACÍA ---
                         cursos = ["Seleccionar"] + sorted(df_alumnos["Curso"].unique())
                         curso = cols[0].selectbox("", cursos, key=make_key("curso", key_base))
 
                         alumnos_disp = []
                         if curso != "Seleccionar":
-                            alumnos_disp = df_alumnos[df_alumnos["Curso"]==curso]["Nombre"].tolist()
+                            alumnos_disp = df_alumnos[df_alumnos["Curso"] == curso]["Nombre"].tolist()
                         alumnos_disp = ["Seleccionar"] + alumnos_disp
                         alumno = cols[1].selectbox("", alumnos_disp, key=make_key("alumno", key_base))
+
                         profesores = ["Seleccionar"] + lista_profesores
                         profesor = cols[2].selectbox("", profesores, key=make_key("prof", key_base))
 
                         cols[3].write("")
                         cols[4].write("")
-                        cols[5].write("")
 
                         if alumno_en_bano(alumno):
-                            st.warning("Este alumno ya está en otro baño")
-                        elif cols[5].button("🟢", key=make_key("entrada", key_base)):
-                            if curso=="Seleccionar" or alumno=="Seleccionar" or profesor=="Seleccionar":
-                                st.warning("Debes seleccionar curso, alumno y profesor")
-                            else:
-                                st.session_state.ocupacion[st.session_state.planta][bano].append({
-                                    "alumno": alumno,
-                                    "curso": curso,
-                                    "profesor": profesor,
-                                    "h_entrada": datetime.now().strftime("%H:%M")
-                                })
-                                st.rerun()
+                            cols[5].warning("Este alumno ya está en otro baño")
+                        else:
+                            with cols[5]:
+                                st.markdown('<div class="btn-alta-wrap">', unsafe_allow_html=True)
+                                clicked = st.button("🟢", key=make_key("entrada", key_base))
+                                st.markdown('</div>', unsafe_allow_html=True)
+
+                                if clicked:
+                                    if curso == "Seleccionar" or alumno == "Seleccionar" or profesor == "Seleccionar":
+                                        st.warning("Debes seleccionar curso, alumno y profesor")
+                                    else:
+                                        st.session_state.ocupacion[st.session_state.planta][bano].append({
+                                            "alumno": alumno,
+                                            "curso": curso,
+                                            "profesor": profesor,
+                                            "h_entrada": datetime.now().strftime("%H:%M")
+                                        })
+                                        st.rerun()
 
 # ----------------------------
 # HISTÓRICO (DE LA PLANTA ACTUAL)
@@ -588,11 +459,25 @@ with tab_hist:
     st.subheader("Histórico de visitas (planta actual)")
 
     conn = init_db(st.session_state.planta)
+    # minutos = diferencia en minutos con fecha+hora vía julianday (robusto)
     df = pd.read_sql_query("""
-        SELECT id, fecha, planta, bano, curso, alumno, profesor,
-               h_entrada, h_salida,
-               (strftime('%s',h_salida)-strftime('%s',h_entrada))/60 as minutos,
-               estado, observaciones, exportado
+        SELECT
+            id,
+            fecha,
+            planta,
+            bano,
+            curso,
+            alumno,
+            profesor,
+            h_entrada,
+            h_salida,
+            CAST(
+              (julianday(fecha || ' ' || h_salida) - julianday(fecha || ' ' || h_entrada)) * 24 * 60
+              AS INTEGER
+            ) AS minutos,
+            estado,
+            observaciones,
+            exportado
         FROM visitas
         ORDER BY id DESC
     """, conn)
