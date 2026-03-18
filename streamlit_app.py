@@ -465,7 +465,7 @@ with tab_panel:
                 ocupados = st.session_state.ocupacion[st.session_state.planta][bano]
 
                 for fila in range(2):
-                    cols = st.columns([2,3,3,1,1,1])
+                    cols = st.columns([2,3,3,1,1,1], gap="small")
 
                     # Clave base segura por widget/fila
                     key_base = make_key("zona", zona, "planta", st.session_state.planta, "bano", bano, "fila", fila)
@@ -547,7 +547,7 @@ with tab_panel:
                         alumno = cols[1].selectbox("", alumnos_disp, key=make_key("alumno", key_base))
 
                         profesores = ["Seleccionar"] + lista_profesores
-                        profesor = cols[2].selectbox("", profesores, key=make_key("prof", key_base))
+                        profesor = cols[2].selectbox(" ", profesores, key=make_key("prof", key_base))
 
                         cols[3].write("")
                         cols[4].write("")
