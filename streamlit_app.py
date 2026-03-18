@@ -616,6 +616,13 @@ with tab_panel:
                         alumnos_disp = ["Seleccionar"] + alumnos_disp
                         alumno = cols[1].selectbox("", alumnos_disp, key=make_key("alumno", key_base))
 
+                        profesores = ["Seleccionar"] + lista_profesores
+                        profesor = cols[2].selectbox("", profesores, key=make_key("prof", key_base))
+
+                        cols[3].write("")
+                        cols[4].write("")
+                        cols[5].write("")
+
                         if alumno_en_bano(alumno):
                             st.warning("Este alumno ya está en otro baño")
                         else:
@@ -635,6 +642,7 @@ with tab_panel:
                                             "h_entrada": datetime.now().strftime("%H:%M")
                                         })
                                         st.rerun()
+
 # ----------------------------
 # HISTÓRICO (DE LA PLANTA ACTUAL)
 # ----------------------------
