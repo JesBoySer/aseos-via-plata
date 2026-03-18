@@ -87,10 +87,11 @@ st.markdown("""
 .stMultiSelect div[aria-selected="true"] {
     background: #111827 !important;
 }
-
-/* IMPORTANTE: centrado seguro (sin romper el componente) */
+           
+/* Forzar que los selectbox ocupen su columna */
 .stSelectbox {
-    text-align: center;
+    width: 100% !important;
+    min-width: 120px;
 }
 
 /* ------------------ BOTONES ------------------ */
