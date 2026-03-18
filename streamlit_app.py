@@ -222,8 +222,9 @@ div[data-testid="column"] > div > div > div > div > .stButton {
     border: none !important;
     background: none !important;
     padding: 0 !important;
-    font-size: 26px !important; /* Tamaño del icono */
+    font-size: 26px !important; /* tamaño del icono */
     cursor: pointer;
+    color: #22c55e !important; /* verde */
 }
 
 .boton-verde-min > button:hover {
