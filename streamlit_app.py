@@ -438,7 +438,7 @@ def alumno_en_bano(nombre):
 tab_panel, tab_hist = st.tabs(["Panel", "Histórico"])
 
 zonas = {
-    "NORTEDELTODO": ["Chicos Norte", "Chicas Norte"],
+    "NORTE": ["Chicos Norte", "Chicas Norte"],
     "SUR": ["Chicos Sur", "Chicas Sur"]
 }
 
@@ -466,7 +466,7 @@ with tab_panel:
         for i, bano in enumerate(banos):
             cont = col1 if i == 0 else col2
             with cont:
-                icono = "🚹" if "Chicos" in bano else "🚺"
+                icono = "🚹❤️" if "Chicos" in bano else "🚺"
                 st.markdown(f"### {icono} {bano}")
 
                 cab = st.columns([2,3,3,1,1,1])
