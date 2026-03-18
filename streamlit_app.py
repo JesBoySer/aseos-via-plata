@@ -217,6 +217,19 @@ div[data-testid="column"] > div > div > div > div > .stButton {
   margin-bottom: 4px;
 }
 
+/* Botón verde minimalista, sin borde */
+.boton-verde-min > button {
+    border: none !important;
+    background: none !important;
+    padding: 0 !important;
+    font-size: 26px !important; /* Tamaño del icono */
+    cursor: pointer;
+}
+
+.boton-verde-min > button:hover {
+    transform: scale(1.1);
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -568,19 +581,23 @@ with tab_panel:
                         cols[4].write("")
                         cols[5].write("")
 
-                        if alumno_en_bano(alumno):
-                            st.warning("Este alumno ya está en otro baño")
-                        elif cols[5].button("🟢", key=make_key("entrada", key_base)):
-                            if curso=="Seleccionar" or alumno=="Seleccionar" or profesor=="Seleccionar":
-                                st.warning("Debes seleccionar curso, alumno y profesor")
-                            else:
-                                st.session_state.ocupacion[st.session_state.planta][bano].append({
-                                    "alumno": alumno,
-                                    "curso": curso,
-                                    "profesor": profesor,
-                                    "h_entrada": datetime.now().strftime("%H:%M")
-                                })
-                                st.rerun()
+						if alumno_en_bano(alumno):
+							st.warning("Este alumno ya está en otro baño")
+						else:
+							with cols[5]:
+								st.markdown('<div class="boton-verde-min">', unsafe_allow_html=True)
+								if st.button("🟢", key=make_key("entrada", key_base)):
+									if curso=="Seleccionar" or alumno=="Seleccionar" or profesor=="Seleccionar":
+										st.warning("Debes seleccionar curso, alumno y profesor")
+									else:
+										st.session_state.ocupacion[st.session_state.planta][bano].append({
+											"alumno": alumno,
+											"curso": curso,
+											"profesor": profesor,
+											"h_entrada": datetime.now().strftime("%H:%M")
+										})
+										st.rerun()
+								st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------------------
 # HISTÓRICO (DE LA PLANTA ACTUAL)
