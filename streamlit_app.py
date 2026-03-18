@@ -34,173 +34,187 @@ FILE_PATH = st.secrets["GITHUB_FILE"]
 st.markdown("""
 <style>
 
-/* ------------------ BASE ------------------ */
 .stApp{
-    background:#0B1120;
-    color:#E2E8F0;
+background:#0B1120;
+color:#E2E8F0;
 }
 
-/* ------------------ SELECTBOX / MULTISELECT ------------------ */
+/* === SELECTBOX / MULTISELECT: fondo negro y texto blanco === */
 
-/* Caja principal */
+/* Caja del control (cerrado) */
 .stSelectbox div[data-baseweb="select"] > div,
 .stMultiSelect div[data-baseweb="select"] > div {
-    background: #000000 !important;
-    color: #ffffff !important;
-    border-color: #334155 !important;
-    border-radius: 8px !important;
+  background: #000000 !important;     /* negro */
+  color: #ffffff !important;           /* texto blanco */
+  border-color: #334155 !important;    /* slate-700 */
+  border-radius: 8px !important;
 }
 
-/* Texto */
+/* Texto del input y placeholder */
 .stSelectbox div[data-baseweb="select"] input,
-.stMultiSelect div[data-baseweb="select"] input {
-    color: #ffffff !important;
+.stMultiSelect div[data-baseweb="select"] input,
+.stSelectbox div[data-baseweb="select"] div[aria-hidden="true"],
+.stMultiSelect div[data-baseweb="select"] div[aria-hidden="true"] {
+  color: #ffffff !important;           /* texto blanco */
 }
 
-/* Icono */
+/* Color algo más tenue para el placeholder (si aplica) */
+.stSelectbox div[data-baseweb="select"] div[aria-hidden="true"],
+.stMultiSelect div[data-baseweb="select"] div[aria-hidden="true"] {
+  opacity: 0.7 !important;             /* simula placeholder */
+}
+
+/* Icono "chevron" (flecha) */
 .stSelectbox svg, 
 .stMultiSelect svg {
-    fill: #ffffff !important;
+  fill: #ffffff !important;
+  color: #ffffff !important;
 }
 
 /* Menú desplegable */
-.stSelectbox div[role="listbox"],
-.stMultiSelect div[role="listbox"] {
-    background: #0a0a0a !important;
-    color: #ffffff !important;
+.stSelectbox div[data-baseweb="select"] div[role="listbox"],
+.stMultiSelect div[data-baseweb="select"] div[role="listbox"] {
+  background: #0a0a0a !important;      /* negro casi puro */
+  color: #ffffff !important;
+  border: 1px solid #334155 !important;
 }
 
-/* Opciones */
+/* Opción del menú (estado normal) */
 .stSelectbox div[role="option"],
 .stMultiSelect div[role="option"] {
-    background: #0a0a0a !important;
-    color: #ffffff !important;
+  background: #0a0a0a !important;
+  color: #ffffff !important;
 }
 
+/* Opción con hover */
 .stSelectbox div[role="option"]:hover,
 .stMultiSelect div[role="option"]:hover {
-    background: #1f2937 !important;
+  background: #1f2937 !important;      /* gris oscuro (tailwind slate-800) */
 }
 
-/* Seleccionado */
+/* Opción seleccionada/activa */
 .stSelectbox div[aria-selected="true"],
 .stMultiSelect div[aria-selected="true"] {
-    background: #111827 !important;
-}
-           
-/* Forzar que los selectbox ocupen su columna */
-.stSelectbox {
-    width: 100% !important;
-    min-width: 120px;
+  background: #111827 !important;      /* slate-900 */
+  color: #ffffff !important;
 }
 
-/* ------------------ BOTONES ------------------ */
+/* Borde/halo de foco para accesibilidad */
+.stSelectbox div[data-baseweb="select"] > div:focus-within,
+.stMultiSelect div[data-baseweb="select"] > div:focus-within {
+  outline: 2px solid #2563EB !important;  /* azul */
+  outline-offset: 1px !important;
+}
+
+/* Alineado centrado (ya lo tenías, lo refuerzo) */
+.stSelectbox div[data-baseweb="select"],
+.stMultiSelect div[data-baseweb="select"] {
+  text-align: center;
+}
+
+
 .stButton>button{
-    border:none;
-    border-radius:8px;
-    background:#1E293B;
-    color:#F8FAFC;
-    font-weight:600;
+border:none;
+border-radius:8px;
+background:#1E293B;
+color:#F8FAFC;
+font-weight:600;
 }
 
 .stButton>button:hover{
-    background:#2563EB;
-    color:white;
+background:#2563EB;
+color:white;
 }
 
-/* Botón verde minimalista */
-.btn-alta-wrap {
-    margin-top: 28px;
-    display: flex;
-    justify-content: center;
-}
-
-.btn-alta-wrap > button {
-    border: none !important;
-    background: none !important;
-    padding: 0 !important;
-    font-size: 26px !important;
-    cursor: pointer;
-    color: #22c55e !important;
-}
-
-.btn-alta-wrap > button:hover {
-    transform: scale(1.1);
-}
-
-/* ------------------ TABLA / TEXTO ------------------ */
 .cabecera-bano{
-    border-bottom:1px solid #38BDF8;
-    padding:4px;
-    font-weight:bold;
+border-bottom:1px solid #38BDF8;
+padding:4px;
+font-weight:bold;
 }
 
 .minutos-alerta{
-    color:#ef4444;
-    font-weight:bold;
+color:#ef4444;
+font-weight:bold;
 }
 
 .ok-verde{
-    color:#22c55e;
-    font-weight:bold;
+color:#22c55e;
+font-weight:bold;
 }
 
-/* ------------------ CHECKBOX ------------------ */
+/* CHECKBOX MÁS PEQUEÑOS */
 .stCheckbox > label > div{
-    transform:scale(0.75);
+transform:scale(0.75);
 }
 
-/* ------------------ COLUMNAS ------------------ */
+/* Centrar contenido de columnas */
 [data-testid="column"] {
     text-align: center;
 }
 
-/* Alinear botón con selects */
+/* centrar selectbox */
+.stSelectbox div[data-baseweb="select"] {
+    text-align: center;
+}
+
+/* centrar checkbox */
+.stCheckbox {
+    display: flex;
+    justify-content: center;
+}
+
+/* Alinear botones con selectboxes sin label */
 div[data-testid="column"] > div > div > div > div > .stButton {
     margin-top: 28px;
 }
 
-/* ------------------ ZONAS ------------------ */
-.zona-wrap {
-    display: flex;
-    justify-content: center;
-    margin-top: 6px;
-    margin-bottom: 4px;
-}
-
+/* === PASTILLAS DE ZONA (NORTE / SUR) === */
 .zona-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    border-radius: 9999px;
-    font-weight: 700;
-    margin: 10px 0 6px 0;
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    color: #E5E7EB;
-    background: rgba(30, 41, 59, 0.45);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;              /* píldora redonda */
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin: 10px 0 6px 0;
+  border: 1px solid rgba(148, 163, 184, 0.35); /* slate-400 con transparencia */
+  backdrop-filter: blur(2px);
+  user-select: none;
 }
 
-/* NORTE */
+/* Variante general sobre fondo oscuro */
+.zona-pill {
+  color: #E5E7EB;                      /* texto gris muy claro */
+  background: rgba(30, 41, 59, 0.45);  /* slate-800 translúcido */
+}
+
+/* NORTE: acento cian/teal */
 .zona-norte {
-    border-color: rgba(56, 189, 248, 0.6);
+  border-color: rgba(56, 189, 248, 0.6);      /* cian */
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.25);
 }
 .zona-norte .punto {
-    width: 8px;
-    height: 8px;
-    border-radius: 9999px;
-    background: #22D3EE;
+  width: 8px; height: 8px; border-radius: 9999px;
+  background: #22D3EE;                       /* cian brillante */
 }
 
-/* SUR */
+/* SUR: acento violeta */
 .zona-sur {
-    border-color: rgba(167, 139, 250, 0.6);
+  border-color: rgba(167, 139, 250, 0.6);     /* violeta */
+  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.25);
 }
 .zona-sur .punto {
-    width: 8px;
-    height: 8px;
-    border-radius: 9999px;
-    background: #A78BFA;
+  width: 8px; height: 8px; border-radius: 9999px;
+  background: #A78BFA;                       /* violeta brillante */
+}
+
+/* Contenedor para centrar en la columna */
+.zona-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+  margin-bottom: 4px;
 }
 
 </style>
@@ -466,7 +480,7 @@ with tab_panel:
                 ocupados = st.session_state.ocupacion[st.session_state.planta][bano]
 
                 for fila in range(2):
-                    cols = st.columns([2,3,3,1,1,1], gap="small")
+                    cols = st.columns([2,3,3,1,1,1])
 
                     # Clave base segura por widget/fila
                     key_base = make_key("zona", zona, "planta", st.session_state.planta, "bano", bano, "fila", fila)
@@ -548,7 +562,7 @@ with tab_panel:
                         alumno = cols[1].selectbox("", alumnos_disp, key=make_key("alumno", key_base))
 
                         profesores = ["Seleccionar"] + lista_profesores
-                        profesor = cols[2].selectbox(" ", profesores, key=make_key("prof", key_base))
+                        profesor = cols[2].selectbox("", profesores, key=make_key("prof", key_base))
 
                         cols[3].write("")
                         cols[4].write("")
@@ -556,23 +570,17 @@ with tab_panel:
 
                         if alumno_en_bano(alumno):
                             st.warning("Este alumno ya está en otro baño")
-                        else:
-                            with cols[5]:
-                                st.markdown('<div class="btn-alta-wrap">', unsafe_allow_html=True)
-                                clicked = st.button("🟢", key=make_key("entrada", key_base))
-                                st.markdown('</div>', unsafe_allow_html=True)
-                        
-                                if clicked:
-                                    if curso == "Seleccionar" or alumno == "Seleccionar" or profesor == "Seleccionar":
-                                        st.warning("Debes seleccionar curso, alumno y profesor")
-                                    else:
-                                        st.session_state.ocupacion[st.session_state.planta][bano].append({
-                                            "alumno": alumno,
-                                            "curso": curso,
-                                            "profesor": profesor,
-                                            "h_entrada": datetime.now().strftime("%H:%M")
-                                        })
-                                        st.rerun()
+                        elif cols[5].button("🟢", key=make_key("entrada", key_base)):
+                            if curso=="Seleccionar" or alumno=="Seleccionar" or profesor=="Seleccionar":
+                                st.warning("Debes seleccionar curso, alumno y profesor")
+                            else:
+                                st.session_state.ocupacion[st.session_state.planta][bano].append({
+                                    "alumno": alumno,
+                                    "curso": curso,
+                                    "profesor": profesor,
+                                    "h_entrada": datetime.now().strftime("%H:%M")
+                                })
+                                st.rerun()
 
 # ----------------------------
 # HISTÓRICO (DE LA PLANTA ACTUAL)
