@@ -253,6 +253,24 @@ div[data-testid="column"] > div > div > div > div > .stButton {
     transform: scale(1.1);
 }
 
+.boton-verde {
+    margin-top: 28px;           /* Ajuste vertical PERFECTO */
+    display: flex;
+    justify-content: center;
+}
+
+.boton-verde button {
+    background: none !important;
+    border: none !important;
+    font-size: 26px !important;
+    color: #22c55e !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+}
+
+.boton-verde button:hover {
+    transform: scale(1.15);
+}
 
 </style>
 """, unsafe_allow_html=True)
@@ -609,8 +627,11 @@ with tab_panel:
 							st.warning("Este alumno ya está en otro baño")
 						else:
 							with cols[5]:
-								st.markdown('<div class="btn-alta-wrap">', unsafe_allow_html=True)
-								if st.button("🟢", key=make_key("entrada", key_base)):
+								st.markdown('<div class="boton-verde">', unsafe_allow_html=True)
+								clicked = st.button("🟢", key=make_key("entrada", key_base))
+								st.markdown('</div>', unsafe_allow_html=True)
+						
+								if clicked:
 									if curso=="Seleccionar" or alumno=="Seleccionar" or profesor=="Seleccionar":
 										st.warning("Debes seleccionar curso, alumno y profesor")
 									else:
@@ -621,7 +642,6 @@ with tab_panel:
 											"h_entrada": datetime.now().strftime("%H:%M")
 										})
 										st.rerun()
-								st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------------------
 # HISTÓRICO (DE LA PLANTA ACTUAL)
